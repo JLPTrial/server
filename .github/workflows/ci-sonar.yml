@@ -1,0 +1,57 @@
+name: CI and SonarQube
+
+on:
+  push:
+    branches: [ main, develop, master ]
+  pull_request:
+    branches: [ main, develop, master ]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then
+            pip install --no-cache-dir -r requirements.txt
+          fi
+          pip install --no-cache-dir pytest pytest-cov
+
+      - name: Run tests with coverage
+        run: |
+          if [ -d tests ] || [ -d src/tests ]; then
+            pytest --cov=src --cov-report=xml:coverage.xml
+          else
+            echo "No tests directory found; skipping tests"
+          fi
+
+      - name: SonarQube Scan
+        if: env.SONAR_TOKEN != ''
+        uses: sonarsource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9 # v7.0.0
+        with:
+          args: >
+            -Dsonar.host.url=https://sonarcloud.io
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+
+      - name: SonarQube skipped
+        if: env.SONAR_TOKEN == ''
+        run: echo "SONAR_TOKEN is not configured; skipping SonarQube scan"
