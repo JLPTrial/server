@@ -36,10 +36,10 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          if [ -d tests ] || [ -d src/tests ]; then
+          if find tests src/tests -type f \( -name '*.py' -o -name '*.pyi' \) 2>/dev/null | grep -q .; then
             pytest --cov=src --cov-report=xml:coverage.xml
           else
-            echo "No tests directory found; skipping tests"
+            echo "No Python test files found; skipping tests"
           fi
 
       - name: SonarQube Scan
