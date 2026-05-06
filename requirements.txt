@@ -1,3 +1,7 @@
 fastapi[standard]==0.135.2
 sqlmodel==0.0.37
 pytest==9.0.2
+flake8==7.3.0
+pylint==4.0.5
+mypy==1.20.2
+bandit==1.9.4
