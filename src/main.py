@@ -48,6 +48,7 @@ app.add_middleware(
 # Engine do banco (inicializa depois)
 engine = None
 
+
 # ==============================
 # STARTUP
 # ==============================
@@ -56,6 +57,7 @@ def on_startup() -> None:
     # Cria o banco e tabelas quando a API inicia
     global engine
     engine = create_db_and_tables()
+
 
 @app.get("/")
 def read_root() -> dict[str, str]:
@@ -69,6 +71,7 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 # Usuários
+
 
 # Criação de usuário
 @app.post("/signup")
@@ -86,7 +89,7 @@ def signup(request: Request, user: User):
 
 # Login do usuário
 @app.post("/login")
-def login(request: Request, response: Response, user : User):
+def login(request: Request, response: Response, user: User):
     with Session(engine) as session:
 
         # Tenta logar com email
@@ -96,12 +99,12 @@ def login(request: Request, response: Response, user : User):
 
         # Se não achou, tenta com handle
         if not user:
-            raise HTTPException(status_code=401, 
+            raise HTTPException(status_code=401,
                                 detail="Invalid username or password")
 
         # Create JSONResponse and set cookie on it (temporário) **********
         resp = JSONResponse({"redirect": "/"})
-        resp.set_cookie(key="session_user", 
+        resp.set_cookie(key="session_user",
                         value=str(user.id), httponly=True, path="/")
 
         return resp
@@ -118,7 +121,7 @@ def question(request: Request, response: Response, id: int):
 
         # Se não achou, tenta com handle
         # Create JSONResponse and set cookie on it (temporário) **********
-        # resp.set_cookie(key="session_user", 
+        # resp.set_cookie(key="session_user",
         # value=questao, httponly=True, path="/")
 
         return questao
