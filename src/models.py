@@ -1,3 +1,9 @@
+"""Database models for the JLPT server application.
+
+This module defines the SQLModel ORM models used by the application,
+including users, questions, tags, media, and related link tables.
+"""
+
 from typing import List, Optional
 from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import Column, String, CheckConstraint
@@ -8,6 +14,8 @@ from sqlalchemy import Column, String, CheckConstraint
 ######################
 
 class User(SQLModel, table=True):
+    """Model representing an application user with email and password."""
+
     __tablename__ = "user"
 
     id: Optional[int] = Field(
@@ -25,6 +33,8 @@ class User(SQLModel, table=True):
 ######################
 
 class QuestionTags(SQLModel, table=True):
+    """Association table linking questions and tags."""
+
     __tablename__ = "question_tags"
 
     question_id: Optional[int] = Field(
@@ -45,6 +55,8 @@ class QuestionTags(SQLModel, table=True):
 ######################
 
 class Tags(SQLModel, table=True):
+    """Tag model used to categorize questions (e.g., grammar, vocab)."""
+
     __tablename__ = "tags"
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -63,6 +75,8 @@ class Tags(SQLModel, table=True):
 ######################
 
 class Statement(SQLModel, table=True):
+    """Model for question statements or prompts."""
+
     __tablename__ = "statement"
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -80,6 +94,8 @@ class Statement(SQLModel, table=True):
 ######################
 
 class ContextualTexts(SQLModel, table=True):
+    """Contextual texts that can be attached to media and questions."""
+
     __tablename__ = "contextual_texts"
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -97,6 +113,8 @@ class ContextualTexts(SQLModel, table=True):
 ######################
 
 class Alternatives(SQLModel, table=True):
+    """Multiple-choice alternatives for a question, with correct index."""
+
     __tablename__ = "alternatives"
 
     __table_args__ = (
@@ -129,6 +147,8 @@ class Alternatives(SQLModel, table=True):
 ######################
 
 class Media(SQLModel, table=True):
+    """Media resources (images, audio) or links to contextual texts."""
+
     __tablename__ = "media"
 
     __table_args__ = (
@@ -168,6 +188,8 @@ class Media(SQLModel, table=True):
 ######################
 
 class Questions(SQLModel, table=True):
+    """Primary question model, linking statements, alternatives, tags, etc."""
+
     __tablename__ = "questions"
 
     __table_args__ = (

@@ -5,14 +5,15 @@ Configura a aplicação FastAPI, incluindo CORS e rotas básicas.
 
 import os
 
-from fastapi import FastAPI, Request, HTTPException, Response
-from fastapi.middleware.cors import CORSMiddleware
-
-
-from src.database import create_db_and_tables
-from src.models import User, Questions
-from sqlmodel import Session, select
+# Third-party imports
+from fastapi import FastAPI, HTTPException  # Request, Response
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from sqlmodel import Session, select
+
+# Local application imports
+from database import create_db_and_tables
+from models import User, Questions
 
 app = FastAPI(title="JLPTrial API")
 
@@ -45,18 +46,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Engine do banco (inicializa depois)
-engine = None
-
 
 # ==============================
 # STARTUP
 # ==============================
 @app.on_event("startup")
 def on_startup() -> None:
+    """Initialize application resources on startup.
+    """
     # Cria o banco e tabelas quando a API inicia
-    global engine
-    engine = create_db_and_tables()
+    app.state.engine = create_db_and_tables()
 
 
 @app.get("/")
@@ -75,8 +74,13 @@ def health() -> dict[str, str]:
 
 # Criação de usuário
 @app.post("/signup")
-def signup(request: Request, user: User):
-    with Session(engine) as session:
+def signup(user: User):
+    """Create a new `User` record in the database.
+
+    Persists the provided `user` model and refreshes it with generated
+    values (e.g. `id`). Raises on failure.
+    """
+    with Session(app.state.engine) as session:
         try:
             session.add(user)       # adiciona no banco
             session.commit()        # salva
@@ -89,34 +93,46 @@ def signup(request: Request, user: User):
 
 # Login do usuário
 @app.post("/login")
-def login(request: Request, response: Response, user: User):
-    with Session(engine) as session:
+def login(user: User):
+    """Authenticate a `User` and return a JSONResponse with a session cookie.
+
+    Validates the provided credentials and sets a `session_user` cookie on
+    successful authentication. Raises HTTPException(401) on failure.
+    """
+    with Session(app.state.engine) as session:
 
         # Tenta logar com email
         statement = select(User).where(User.email == user.email)
         statement = statement.where(User.password == user.password)
-        user = session.exec(statement).first()
+        temp = session.exec(statement).first()
 
         # Se não achou, tenta com handle
-        if not user:
+        if not temp:
             raise HTTPException(status_code=401,
                                 detail="Invalid username or password")
+
+        found_user = temp
 
         # Create JSONResponse and set cookie on it (temporário) **********
         resp = JSONResponse({"redirect": "/"})
         resp.set_cookie(key="session_user",
-                        value=str(user.id), httponly=True, path="/")
+                        value=str(found_user.id),
+                        httponly=True,
+                        path="/")
 
         return resp
 
 
-@app.get("/questions/{id}")
-def question(request: Request, response: Response, id: int):
-    """Uga uga"""
-    with Session(engine) as session:
+@app.get("/questions/{id_questao}")
+def question(id_questao: int):
+    """Retrieve a question by its integer `id`.
+
+    Returns the `Questions` instance if found, otherwise `None`.
+    """
+    with Session(app.state.engine) as session:
 
         # Tenta logar com email
-        statement = select(Questions).where(Questions.id == id)
+        statement = select(Questions).where(Questions.id == id_questao)
         questao = session.exec(statement).first()
 
         # Se não achou, tenta com handle
