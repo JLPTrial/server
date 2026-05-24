@@ -6,17 +6,19 @@ from sqlalchemy import Column, String, CheckConstraint
 ######################
 # USER (TEMPORÁRIO)
 ######################
+
 class User(SQLModel, table=True):
     __tablename__ = "user"
+
     id: Optional[int] = Field(
         default=None,
         primary_key=True
 
     )
 
-
     email: str = Field(nullable=False, unique=True)
     password: str = Field(nullable=False)
+
 
 ######################
 # QUESTION TAGS

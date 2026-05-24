@@ -5,14 +5,14 @@ Configura a aplicação FastAPI, incluindo CORS e rotas básicas.
 
 import os
 
-from fastapi import FastAPI, Request, Depends, HTTPException, status, Cookie, Response, Form
+from fastapi import FastAPI, Request, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 
 from src.database import create_db_and_tables
 from src.models import User, Questions
-from sqlmodel import SQLModel, create_engine, Session, select
-from fastapi.responses import RedirectResponse, JSONResponse
+from sqlmodel import Session, select
+from fastapi.responses import JSONResponse
 
 app = FastAPI(title="JLPTrial API")
 
@@ -45,8 +45,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-
 # Engine do banco (inicializa depois)
 engine = None
 
@@ -59,9 +57,6 @@ def on_startup() -> None:
     global engine
     engine = create_db_and_tables()
 
-
-
-
 @app.get("/")
 def read_root() -> dict[str, str]:
     """Retorna mensagem simples indicando que a API está ativa."""
@@ -73,14 +68,7 @@ def health() -> dict[str, str]:
     """Endpoint de verificação de saúde da aplicação."""
     return {"status": "ok"}
 
-
-
-
-
-
-
-
-## Usuários
+# Usuários
 
 # Criação de usuário
 @app.post("/signup")
@@ -91,7 +79,7 @@ def signup(request: Request, user: User):
             session.commit()        # salva
             session.refresh(user)   # atualiza objeto
 
-        except Exception as e:
+        except Exception:
             print("Erro ao adicionar novo usuário")
             raise
 
@@ -108,17 +96,19 @@ def login(request: Request, response: Response, user : User):
 
         # Se não achou, tenta com handle
         if not user:
-            raise HTTPException(status_code=401, detail="Invalid username or password")
+            raise HTTPException(status_code=401, 
+                                detail="Invalid username or password")
 
         # Create JSONResponse and set cookie on it (temporário) **********
         resp = JSONResponse({"redirect": "/"})
-        resp.set_cookie(key="session_user", value=str(user.id), httponly=True, path="/")
+        resp.set_cookie(key="session_user", 
+                        value=str(user.id), httponly=True, path="/")
 
         return resp
 
 
 @app.get("/questions/{id}")
-def question(request:Request, response:Response, id:int):
+def question(request: Request, response: Response, id: int):
     """Uga uga"""
     with Session(engine) as session:
 
@@ -128,6 +118,7 @@ def question(request:Request, response:Response, id:int):
 
         # Se não achou, tenta com handle
         # Create JSONResponse and set cookie on it (temporário) **********
-        #resp.set_cookie(key="session_user", value=questao, httponly=True, path="/")
+        # resp.set_cookie(key="session_user", 
+        # value=questao, httponly=True, path="/")
 
         return questao
