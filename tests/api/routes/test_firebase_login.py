@@ -1,10 +1,10 @@
 from fastapi.testclient import TestClient
 from sqlmodel import select
 
-from server.src.api.routes import login as login_routes
-from server.src.api.utils.cookies import SESSION_COOKIE_NAME
-from server.src.core.firebase.initialization import FirebaseIdentity
-from server.src.models import User
+from src.api.routes import login as login_routes
+from src.api.utils.cookies import SESSION_COOKIE_NAME
+from src.core.firebase.initialization import FirebaseIdentity
+from src.models import User
 
 
 def _firebase_identity(uid: str, email: str, name: str | None = None) -> FirebaseIdentity:
@@ -13,7 +13,7 @@ def _firebase_identity(uid: str, email: str, name: str | None = None) -> Firebas
 
 def test_firebase_signup_creates_local_user(client: TestClient, db, monkeypatch) -> None:
 	monkeypatch.setattr(
-		"server.src.api.services.login.verify_firebase_id_token",
+		"src.api.services.login.verify_firebase_id_token",
 		lambda uid_token: _firebase_identity("firebase-uid-123", "fulano@jlptrial.com", "Fulano"),
 	)
 	monkeypatch.setattr(
@@ -49,7 +49,7 @@ def test_firebase_signup_creates_local_user(client: TestClient, db, monkeypatch)
 
 def test_firebase_login_requires_registered_user(client: TestClient, monkeypatch) -> None:
 	monkeypatch.setattr(
-		"server.src.api.services.login.verify_firebase_id_token",
+		"src.api.services.login.verify_firebase_id_token",
 		lambda uid_token: _firebase_identity("firebase-uid-456", "missing@jlptrial.com", "Missing"),
 	)
 
@@ -70,7 +70,7 @@ def test_firebase_login_sets_session_cookie(client: TestClient, db, monkeypatch)
 	db.commit()
 
 	monkeypatch.setattr(
-		"server.src.api.services.login.verify_firebase_id_token",
+		"src.api.services.login.verify_firebase_id_token",
 		lambda uid_token: _firebase_identity("firebase-uid-789", "active@jlptrial.com", "Active User"),
 	)
 	monkeypatch.setattr(
@@ -103,7 +103,7 @@ def test_firebase_refresh_reads_session_cookie(client: TestClient, db, monkeypat
 	db.commit()
 
 	monkeypatch.setattr(
-		"server.src.api.services.login.verify_firebase_session_cookie",
+		"src.api.services.login.verify_firebase_session_cookie",
 		lambda session_cookie: _firebase_identity("firebase-uid-111", "refresh@jlptrial.com", "Refresh User"),
 	)
 

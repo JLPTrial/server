@@ -2,10 +2,10 @@ from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
-from server.src.api.utils.cookies import SESSION_COOKIE_NAME
-from server.src.core.config import settings
-from server.src.core.firebase.initialization import FirebaseIdentity
-from server.src.models import Alternatives, Questions, Statement, User
+from src.api.utils.cookies import SESSION_COOKIE_NAME
+from src.core.config import settings
+from src.core.firebase.initialization import FirebaseIdentity
+from src.models import Alternatives, Questions, Statement, User
 
 
 def test_question_requires_login(client: TestClient, monkeypatch) -> None:
@@ -44,7 +44,7 @@ def test_question_returns_item_when_logged_in(client: TestClient, db, monkeypatc
 	db.refresh(question)
 
 	monkeypatch.setattr(
-		"server.src.api.services.login.verify_firebase_session_cookie",
+		"src.api.services.login.verify_firebase_session_cookie",
 		lambda session_cookie: FirebaseIdentity(
 			uid="firebase-uid-abc",
 			email="user@jlptrial.com",
@@ -52,7 +52,7 @@ def test_question_returns_item_when_logged_in(client: TestClient, db, monkeypatc
 		),
 	)
 	monkeypatch.setattr(
-		"server.src.api.services.login._get_user_by_firebase_uid",
+		"src.api.services.login._get_user_by_firebase_uid",
 		lambda session, firebase_uid: User(
 			firebase_uid=firebase_uid,
 			email="user@jlptrial.com",

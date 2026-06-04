@@ -2,9 +2,9 @@ from collections.abc import Generator
 
 import pytest
 from fastapi.testclient import TestClient
-from server.src.database import engine, init_db
-from server.src.main import app
-from server.src.models import User
+from src.database import engine, init_db
+from src.main import app
+from src.models import User
 from sqlmodel import Session, delete
 
 
