@@ -1,4 +1,7 @@
 data
 .vscode
+**cache
+.coverage
 
-*.pyc
+**.pyc
+keys/serviceAccountKey.json

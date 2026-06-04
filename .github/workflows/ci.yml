@@ -32,12 +32,13 @@ jobs:
             pip install --no-cache-dir -r requirements.txt
           fi
 
-      - name: Run flake8 linter
-        run: flake8 src --count --show-source --statistics
-
-      - name: Run pylint
+      - name: Run ruff lint
         run: |
-          find src -name "*.py" -type f | xargs pylint --fail-under=8.0
+          python -m ruff check src
+
+      - name: Run ruff format check
+        run: |
+          python -m ruff format --check src
 
       - name: Type check with mypy
         run: mypy src --ignore-missing-imports

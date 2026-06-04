@@ -1,0 +1,77 @@
+[project]
+name = "jlptrial-server"
+version = "0.1.0"
+description = "Backend API for JLPTrial"
+requires-python = ">=3.10,<4.0"
+dependencies = [
+    "fastapi[standard]<1.0.0,>=0.114.2",
+    "firebase-admin==6.5.0",
+    "pydantic>2.0",
+    "pydantic-settings<3.0.0,>=2.2.1",
+    "pwdlib[argon2,bcrypt]>=0.3.0",
+    "sqlmodel<1.0.0,>=0.0.37",
+]
+
+[dependency-groups]
+dev = [
+    "bandit==1.9.4",
+    "coverage<8.0.0,>=7.4.3",
+    "httpx2==2.3.0",
+    "mypy<2.0.0,>=1.20.2",
+    "prek>=0.2.24,<1.0.0",
+    "pytest-cov==6.0.0",
+    "pytest<10.0.0,>=9.0.2",
+    "ruff<1.0.0,>=0.2.2",
+    "ty>=0.0.25",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.mypy]
+strict = true
+exclude = ["venv", ".venv"]
+
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "ARG001", # unused arguments in functions
+    "T201",   # print statements are not allowed
+]
+ignore = [
+    "E501",  # line too long, handled by Ruff formatter
+    "B008",  # do not perform function calls in argument defaults
+    "W191",  # indentation contains tabs
+    "B904",  # Allow raising exceptions without from e, for HTTPException
+]
+
+[tool.ruff.lint.pyupgrade]
+# Preserve types, even if a file imports `from __future__ import annotations`.
+keep-runtime-typing = true
+
+[tool.coverage.run]
+source = ["src"]
+dynamic_context = "test_function"
+
+[tool.coverage.report]
+show_missing = true
+sort = "-Cover"
+
+[tool.coverage.html]
+show_contexts = true
+
+[tool.ty.terminal]
+error-on-warning = true
+
+[tool.bandit]
+exclude_dirs = ["tests"]
