@@ -48,4 +48,3 @@ def get_firebase_user(request: Request, session: SessionDep) -> User:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=INVALID_SESSION_COOKIE_MESSAGE,
         ) from exc
-

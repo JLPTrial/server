@@ -29,4 +29,3 @@ def read_question(
         )
 
     return question
-
