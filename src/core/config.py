@@ -1,19 +1,8 @@
 from pathlib import Path
-from typing import Annotated, Any
 
-from pydantic import BeforeValidator
 from pydantic_settings import BaseSettings
 
 SERVER_DIR = Path(__file__).resolve().parents[2]
-
-
-def parse_cors(value: Any) -> list[str] | str:
-    if isinstance(value, str) and not value.startswith("["):
-        return [origin.strip() for origin in value.split(",") if origin.strip()]
-    if isinstance(value, list | str):
-        return value
-    raise ValueError(value)
-
 
 # Esta classe irá gerar as configurações principais do app
 # caso você não esteja com o ambiente configurado
@@ -25,7 +14,6 @@ def parse_cors(value: Any) -> list[str] | str:
 class Settings(BaseSettings):
     PROJECT_NAME: str = "JLPTrial API"
     APP_FLAVOR: str = "dev"
-    IS_PROD: bool = APP_FLAVOR.strip().lower() == "prod"
     SECURE_REQUEST: bool = True
     FRONTEND_HOST: str = "http://localhost:5173"
     FIREBASE_SESSION_COOKIE_EXPIRE_DAYS: int = 10
@@ -33,29 +21,31 @@ class Settings(BaseSettings):
         SERVER_DIR / "keys" / "serviceAccountKey.json"
     )
 
-    DEV_BACKEND_CORS_ORIGINS: Annotated[
-        list[str] | str, BeforeValidator(parse_cors)
-    ] = "*"
-    PROD_BACKEND_CORS_ORIGINS: Annotated[
-        list[str] | str, BeforeValidator(parse_cors)
-    ] = []
+    DEV_BACKEND_CORS_ORIGINS: str = "*"
+    PROD_BACKEND_CORS_ORIGINS: str = ""
 
     SQLITE_FILE: str = str(SERVER_DIR / "data" / "N5" / "N5.db")
 
     @property
+    def IS_PROD(self) -> bool:
+        return self.APP_FLAVOR.strip().lower() == "prod"
+
+    @property
     def cors_origins(self) -> list[str]:
-        origins: list[str]
+        raw = self.DEV_BACKEND_CORS_ORIGINS
+
         if self.IS_PROD:
             raw = self.PROD_BACKEND_CORS_ORIGINS
-        else:
-            raw = self.DEV_BACKEND_CORS_ORIGINS
 
-        if isinstance(raw, str):
-            origins = [raw]
-        else:
-            origins = raw
+        origins = []
 
-        return [origin.rstrip("/") for origin in origins if origin]
+        for origin in raw.split(","):
+            origin = origin.strip().rstrip("/")
+
+            if origin:
+                origins.append(origin)
+
+        return origins
 
 
 settings = Settings()

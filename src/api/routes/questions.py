@@ -7,6 +7,7 @@ from ...api.dependencies.current_user import get_current_user
 from ...database.session import SessionDep
 from ...models import Questions, User
 from ...models.question_response import QuestionResponse
+from ..utils.question_formatter import format_question
 
 router = APIRouter(prefix="/questions", tags=["questions"])
 
@@ -19,13 +20,15 @@ def read_question(
     question_id: int,
     session: SessionDep,
     _current_user: Annotated[User, Depends(get_current_user)],
-) -> Questions:
+) -> dict[str, object]:
     statement = select(Questions).where(Questions.id == question_id)
     question = session.exec(statement).first()
+
+    # TODO: Talvez definir um helper para isso?
     if question is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Question not found",
         )
 
-    return question
+    return format_question(question)

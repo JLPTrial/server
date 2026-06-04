@@ -8,7 +8,6 @@ SESSION_COOKIE_NAME = "firebase_session"
 
 
 def set_session_cookie(response: Response, session_cookie: str) -> None:
-    is_production = settings.IS_PROD
     valid_time = int(
         timedelta(days=settings.FIREBASE_SESSION_COOKIE_EXPIRE_DAYS).total_seconds()
     )
@@ -16,7 +15,7 @@ def set_session_cookie(response: Response, session_cookie: str) -> None:
         key=SESSION_COOKIE_NAME,
         value=session_cookie,
         httponly=True,
-        secure=is_production,
+        secure=settings.IS_PROD,
         samesite="lax",
         max_age=valid_time,
         expires=valid_time,
