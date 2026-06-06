@@ -1,7 +1,43 @@
-from typing import Optional
+from typing import List, Optional
+from sqlmodel import SQLModel, Field, Relationship
+from sqlalchemy import Column, String, CheckConstraint
 
-from sqlmodel import Field, Relationship, SQLModel
+######################
+# UserQuestion
+######################
+class UserQuestion(SQLModel, table=True):
+    """Stores the relationship between a user and a question, including answer status."""
 
+    __tablename__ = "user_question"
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('answered', 'not_answered', 'wrong')",
+            name="user_question_status_check"
+        ),
+    )
+
+    user_firebase_uid: Optional[str] = Field(
+        default=None,
+        foreign_key="user.firebase_uid",
+        primary_key=True
+    )
+
+    question_id: Optional[int] = Field(
+        default=None,
+        foreign_key="questions.id",
+        primary_key=True
+    )
+
+    status: str = Field(
+        sa_column=Column(String, nullable=False),
+        default="not_answered"
+    )
+
+    selected_alternative: Optional[int] = Field(default=None)
+
+    # Relationships
+    question: Optional["Questions"] = Relationship(back_populates="users_link")
 
 class QuestionTags(SQLModel, table=True):
     __tablename__ = "question_tags"
@@ -94,3 +130,5 @@ class Questions(SQLModel, table=True):
     tags: list["Tags"] = Relationship(
         back_populates="questions", link_model=QuestionTags
     )
+
+    users_link: list[UserQuestion] = Relationship(back_populates="question")

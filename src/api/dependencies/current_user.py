@@ -4,7 +4,7 @@ from sqlmodel import select
 from ...api.services.login import get_user_from_session_cookie
 from ...core.config import settings
 from ...core.firebase.constants import INVALID_SESSION_COOKIE_MESSAGE
-from ...database.session import SessionDep
+from ...database.session import DatabaseManagerDep
 from ...models import User
 from ..utils.cookies import SESSION_COOKIE_NAME
 
@@ -14,26 +14,28 @@ from ..utils.cookies import SESSION_COOKIE_NAME
 # autenticação ou coisas do tipo
 
 
-def get_current_user(request: Request, session: SessionDep) -> User:
+def get_current_user(request: Request, 
+                     db: DatabaseManagerDep) -> User:
     if not settings.SECURE_REQUEST:
-        return get_dummy_user(session)
-    return get_firebase_user(request, session)
+        return get_dummy_user(db)
+    return get_firebase_user(request, db)
 
 
-def get_dummy_user(session: SessionDep) -> User:
+def get_dummy_user(db: DatabaseManagerDep) -> User:
     dev_uid = "__dev__"
-    user = session.exec(select(User).where(User.firebase_uid == dev_uid)).first()
-    if user:
-        return user
+    with db.session("users") as session:
+        user = session.exec(select(User).where(User.firebase_uid == dev_uid)).first()
+        if user:
+            return user
 
-    test_user = User(firebase_uid=dev_uid, email="dev@example.com", name="Dev User")
-    session.add(test_user)
-    session.commit()
-    session.refresh(test_user)
-    return test_user
+        test_user = User(firebase_uid=dev_uid, email="dev@example.com", name="Dev User")
+        session.add(test_user)
+        session.commit()
+        session.refresh(test_user)
+        return test_user
 
 
-def get_firebase_user(request: Request, session: SessionDep) -> User:
+def get_firebase_user(request: Request, db: DatabaseManagerDep) -> User:
     session_cookie = request.cookies.get(SESSION_COOKIE_NAME)
     if not session_cookie:
         raise HTTPException(
@@ -42,7 +44,7 @@ def get_firebase_user(request: Request, session: SessionDep) -> User:
         )
 
     try:
-        return get_user_from_session_cookie(session, session_cookie)
+        return get_user_from_session_cookie(db, session_cookie)
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

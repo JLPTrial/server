@@ -35,3 +35,9 @@ class QuestionResponse(SQLModel):
     alternatives: QuestionAlternativesResponse
     media: QuestionMediaResponse | None = None
     tags: list[str]
+
+class QuestionListResponse(SQLModel):
+    page: int
+    limit: int
+    total: int
+    items: list[QuestionResponse]

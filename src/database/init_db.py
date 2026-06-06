@@ -1,7 +1,8 @@
 from sqlmodel import SQLModel
 
-from .session import engine
+from .session import ENGINES
 
 
 def init_db() -> None:
-    SQLModel.metadata.create_all(engine)
+    for engine in ENGINES.values():
+        SQLModel.metadata.create_all(engine)

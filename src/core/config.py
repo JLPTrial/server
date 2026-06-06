@@ -24,7 +24,18 @@ class Settings(BaseSettings):
     DEV_BACKEND_CORS_ORIGINS: str = "*"
     PROD_BACKEND_CORS_ORIGINS: str = ""
 
-    SQLITE_FILE: str = str(SERVER_DIR / "data" / "N5" / "N5.db")
+    USERS_DB_FILE: str = str(SERVER_DIR / "data" / "users" / "users.db")
+    SQLITE_FILE_N4: str = str(SERVER_DIR / "data" / "N4" / "N4.db")
+    SQLITE_FILE_N5: str = str(SERVER_DIR / "data" / "N5" / "N5.db")
+
+    AVAILABLE_QUESTION_DATABASES: dict[int, str] = {4: "N4", 5: "N5"}
+    DATABASE_PATHS: dict[str, str] = {
+        "users": USERS_DB_FILE,
+        "N5": SQLITE_FILE_N5,
+        "N4": SQLITE_FILE_N4,
+    }
+
+    AVAILABLE_QUESTION_TOPICS: list[str] = ["grammar", "vocabulary", "kanji", "reading", "listening"]
 
     @property
     def IS_PROD(self) -> bool:
