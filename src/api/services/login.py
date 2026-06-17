@@ -1,5 +1,4 @@
-from sqlmodel import select
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from ...core.firebase.initialization import FirebaseTokenError
 from ...core.firebase.operations import (

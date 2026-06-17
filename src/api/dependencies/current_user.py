@@ -14,8 +14,7 @@ from ..utils.cookies import SESSION_COOKIE_NAME
 # autenticação ou coisas do tipo
 
 
-def get_current_user(request: Request, 
-                     db: DatabaseManagerDep) -> User:
+def get_current_user(request: Request, db: DatabaseManagerDep) -> User:
     if not settings.SECURE_REQUEST:
         return get_dummy_user(db)
     return get_firebase_user(request, db)

@@ -1,6 +1,8 @@
-from typing import List, Optional
-from sqlmodel import SQLModel, Field, Relationship
-from sqlalchemy import Column, String, CheckConstraint
+from typing import Optional
+
+from sqlalchemy import CheckConstraint, Column, String
+from sqlmodel import Field, Relationship, SQLModel
+
 
 ######################
 # UserQuestion
@@ -17,13 +19,13 @@ class UserQuestion(SQLModel, table=True):
         ),
     )
 
-    user_firebase_uid: Optional[str] = Field(
+    user_firebase_uid: str | None = Field(
         default=None,
         foreign_key="user.firebase_uid",
         primary_key=True
     )
 
-    question_id: Optional[int] = Field(
+    question_id: int | None = Field(
         default=None,
         foreign_key="questions.id",
         primary_key=True
@@ -34,7 +36,7 @@ class UserQuestion(SQLModel, table=True):
         default="not_answered"
     )
 
-    selected_alternative: Optional[int] = Field(default=None)
+    selected_alternative: int | None = Field(default=None)
 
     # Relationships
     question: Optional["Questions"] = Relationship(back_populates="users_link")

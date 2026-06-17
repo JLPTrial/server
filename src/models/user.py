@@ -1,6 +1,4 @@
-from typing import List, Optional
-from sqlmodel import SQLModel, Field, Relationship
-from sqlalchemy import Column, String, CheckConstraint
+from sqlmodel import Field, SQLModel
 
 
 class User(SQLModel, table=True):

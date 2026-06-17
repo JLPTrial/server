@@ -1,16 +1,16 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import select
+from fastapi import APIRouter, Depends
 from sqlalchemy import and_, or_
+from sqlmodel import select
 
 from ...api.dependencies.current_user import get_current_user
+from ...core.config import settings
 from ...database.session import DatabaseManagerDep
 from ...models import Questions, User
 from ...models.question import Tags, UserQuestion
-from ...models.question_response import QuestionResponse, QuestionListResponse
+from ...models.question_response import QuestionListResponse
 from ..utils.question_formatter import format_question
-from ...core.config import settings
 
 router = APIRouter(tags=["questions"])
 
@@ -45,7 +45,7 @@ def read_question(
             # Filter by question_id if provided
             if question_id:
                 stmt = stmt.where(Questions.id == question_id)
-            
+
             # Filter tag if provided
             if tag:
                 stmt = stmt.join(Questions.tags).where(Tags.name.ilike(f"%{tag}%"))
@@ -114,7 +114,7 @@ def read_question(
             stmt = (
                 select(Questions)
             )
-            
+
             # Filter tag if provided
             if tag:
                 stmt = stmt.join(Questions.tags).where(Tags.name.ilike(f"%{tag}%"))
@@ -178,7 +178,7 @@ def read_question(
     end = start + limit
 
     results = []
-    if (level_id in settings.AVAILABLE_QUESTION_DATABASES.values() 
+    if (level_id in settings.AVAILABLE_QUESTION_DATABASES.values()
         and topic_id in settings.AVAILABLE_QUESTION_TOPICS):
         with db.session(level_id) as session:
 
@@ -186,7 +186,7 @@ def read_question(
             stmt = (
                 select(Questions).where(Questions.question_type == topic_id)
             )
-            
+
             # Filter tag if provided
             if tag:
                 stmt = stmt.join(Questions.tags).where(Tags.name.ilike(f"%{tag}%"))

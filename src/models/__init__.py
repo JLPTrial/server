@@ -10,7 +10,7 @@ from .question import (
     QuestionTags,
     Statement,
     Tags,
-    UserQuestion
+    UserQuestion,
 )
 from .user import User
 
