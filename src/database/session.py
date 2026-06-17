@@ -1,4 +1,3 @@
-from collections.abc import Generator
 from typing import Annotated
 
 from fastapi import Depends
@@ -30,11 +29,3 @@ DatabaseManagerDep = Annotated[
     DatabaseManager,
     Depends(get_db_manager)
 ]
-
-    
-"""def get_db() -> Generator[Session, None, None]:
-    with Session(ENGINES["N5"]) as session:
-            yield session
-
-
-SessionDep = Annotated[Session, Depends(get_db)]"""
