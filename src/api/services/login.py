@@ -1,4 +1,5 @@
 from sqlmodel import select
+from sqlmodel import Session
 
 from ...core.firebase.initialization import FirebaseTokenError
 from ...core.firebase.operations import (
@@ -76,6 +77,5 @@ def get_user_from_session_cookie(db: DatabaseManagerDep, session_cookie: str) ->
         return user
 
 
-def _get_user_by_firebase_uid(db: DatabaseManagerDep, firebase_uid: str) -> User | None:
-    with db.session("users") as session:
-        return session.exec(select(User).where(User.firebase_uid == firebase_uid)).first()
+def _get_user_by_firebase_uid(session: Session, firebase_uid: str) -> User | None:
+    return session.exec(select(User).where(User.firebase_uid == firebase_uid)).first()
