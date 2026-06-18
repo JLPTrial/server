@@ -15,31 +15,27 @@ class UserQuestion(SQLModel, table=True):
     __table_args__ = (
         CheckConstraint(
             "status IN ('answered', 'not_answered', 'wrong')",
-            name="user_question_status_check"
+            name="user_question_status_check",
         ),
     )
 
     user_firebase_uid: str | None = Field(
-        default=None,
-        foreign_key="user.firebase_uid",
-        primary_key=True
+        default=None, foreign_key="user.firebase_uid", primary_key=True
     )
 
     question_id: int | None = Field(
-        default=None,
-        foreign_key="questions.id",
-        primary_key=True
+        default=None, foreign_key="questions.id", primary_key=True
     )
 
     status: str = Field(
-        sa_column=Column(String, nullable=False),
-        default="not_answered"
+        sa_column=Column(String, nullable=False), default="not_answered"
     )
 
     selected_alternative: int | None = Field(default=None)
 
     # Relationships
     question: Optional["Questions"] = Relationship(back_populates="users_link")
+
 
 class QuestionTags(SQLModel, table=True):
     __tablename__ = "question_tags"

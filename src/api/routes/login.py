@@ -49,9 +49,7 @@ def signup(
 
 @router.post("/login", responses={401: {"description": "Invalid credentials"}})
 def login(
-    response: Response,
-    db: DatabaseManagerDep,
-    credentials: FirebaseLoginRequest
+    response: Response, db: DatabaseManagerDep, credentials: FirebaseLoginRequest
 ) -> Any:
     try:
         user = login_user(db, credentials)

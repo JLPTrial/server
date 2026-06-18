@@ -19,7 +19,7 @@ router = APIRouter(tags=["questions"])
     "/questions",
     response_model=QuestionListResponse,
 )
-def read_question(
+def read_questions(
     db: DatabaseManagerDep,
     _current_user: Annotated[User, Depends(get_current_user)],
     question_id: int | None = None,
@@ -28,7 +28,6 @@ def read_question(
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
-
     # Pagination logic
     start = (page - 1) * limit
     end = start + limit
@@ -36,11 +35,8 @@ def read_question(
     results = []
     for question_database_title in settings.AVAILABLE_QUESTION_DATABASES.values():
         with db.session(question_database_title) as session:
-
             # Selecting all questions
-            stmt = (
-                select(Questions)
-            )
+            stmt = select(Questions)
 
             # Filter by question_id if provided
             if question_id:
@@ -71,7 +67,7 @@ def read_question(
                             and_(
                                 UserQuestion.user_firebase_uid == firebase_uid,
                                 UserQuestion.status != "answered",
-                            )
+                            ),
                         )
                     )
 
@@ -87,21 +83,21 @@ def read_question(
         "items": results[start:end],
     }
 
+
 # Filters question by level
 @router.get(
     "/levels/{level_id}/questions",
     response_model=QuestionListResponse,
 )
-def read_question(
+def read_level_questions(
     db: DatabaseManagerDep,
     _current_user: Annotated[User, Depends(get_current_user)],
-    level_id: str | None = None, # N4 or N5, for example
+    level_id: str | None = None,  # N4 or N5, for example
     tag: str | None = None,
     answered: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
-
     # Pagination logic
     start = (page - 1) * limit
     end = start + limit
@@ -109,11 +105,8 @@ def read_question(
     results = []
     if level_id in settings.AVAILABLE_QUESTION_DATABASES.values():
         with db.session(level_id) as session:
-
             # Selecting all questions
-            stmt = (
-                select(Questions)
-            )
+            stmt = select(Questions)
 
             # Filter tag if provided
             if tag:
@@ -140,7 +133,7 @@ def read_question(
                             and_(
                                 UserQuestion.user_firebase_uid == firebase_uid,
                                 UserQuestion.status != "answered",
-                            )
+                            ),
                         )
                     )
 
@@ -162,30 +155,28 @@ def read_question(
     "/levels/{level_id}/topics/{topic_id}/questions",
     response_model=QuestionListResponse,
 )
-def read_question(
+def read_level_topic_questions(
     db: DatabaseManagerDep,
     _current_user: Annotated[User, Depends(get_current_user)],
-    level_id: str | None = None, # N4 or N5, for example
-    topic_id: str | None = None, # grammar, vocabulary, etc
+    level_id: str | None = None,  # N4 or N5, for example
+    topic_id: str | None = None,  # grammar, vocabulary, etc
     tag: str | None = None,
     answered: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
-
     # Pagination logic
     start = (page - 1) * limit
     end = start + limit
 
     results = []
-    if (level_id in settings.AVAILABLE_QUESTION_DATABASES.values()
-        and topic_id in settings.AVAILABLE_QUESTION_TOPICS):
+    if (
+        level_id in settings.AVAILABLE_QUESTION_DATABASES.values()
+        and topic_id in settings.AVAILABLE_QUESTION_TOPICS
+    ):
         with db.session(level_id) as session:
-
             # Selecting all questions
-            stmt = (
-                select(Questions).where(Questions.question_type == topic_id)
-            )
+            stmt = select(Questions).where(Questions.question_type == topic_id)
 
             # Filter tag if provided
             if tag:
@@ -212,7 +203,7 @@ def read_question(
                             and_(
                                 UserQuestion.user_firebase_uid == firebase_uid,
                                 UserQuestion.status != "answered",
-                            )
+                            ),
                         )
                     )
 

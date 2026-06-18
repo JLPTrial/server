@@ -36,6 +36,7 @@ class QuestionResponse(SQLModel):
     media: QuestionMediaResponse | None = None
     tags: list[str]
 
+
 class QuestionListResponse(SQLModel):
     page: int
     limit: int

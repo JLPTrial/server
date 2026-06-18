@@ -35,7 +35,13 @@ class Settings(BaseSettings):
         "N4": SQLITE_FILE_N4,
     }
 
-    AVAILABLE_QUESTION_TOPICS: list[str] = ["grammar", "vocabulary", "kanji", "reading", "listening"]
+    AVAILABLE_QUESTION_TOPICS: list[str] = [
+        "grammar",
+        "vocabulary",
+        "kanji",
+        "reading",
+        "listening",
+    ]
 
     @property
     def IS_PROD(self) -> bool:

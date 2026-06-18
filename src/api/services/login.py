@@ -24,7 +24,9 @@ def signup_user(db: DatabaseManagerDep, credentials: FirebaseSignupRequest) -> U
         user = _get_user_by_firebase_uid(session, identity.uid)
 
         if user is None:
-            user = session.exec(select(User).where(User.email == identity.email)).first()
+            user = session.exec(
+                select(User).where(User.email == identity.email)
+            ).first()
 
         name = credentials.name.strip() or identity.name or identity.email.split("@")[0]
 
