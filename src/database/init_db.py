@@ -3,7 +3,6 @@ from .session import ENGINES
 
 
 def init_db() -> None:
-
     # Cria as tabelas para os usuários
     USER_METADATA.create_all(ENGINES["users"])
 

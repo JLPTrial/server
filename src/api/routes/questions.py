@@ -35,7 +35,6 @@ def read_questions(
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
-
     # Pagination logic
     start = (page - 1) * limit
     end = start + limit
@@ -82,13 +81,12 @@ def read_level_questions(
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
-
     # Pagination logic
     start = (page - 1) * limit
     end = start + limit
 
     # Validate level_id and topic_id before querying the database
-    if not(validate_question_database_id(level_id)):
+    if not (validate_question_database_id(level_id)):
         return {
             "page": page,
             "limit": limit,
@@ -99,7 +97,6 @@ def read_level_questions(
     # Querying database
     results = []
     with db.session(level_id) as session:
-
         # Selecting all questions
         stmt = select(Questions)
 
@@ -137,27 +134,24 @@ def read_level_topic_questions(
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
-
     # Pagination logic
     start = (page - 1) * limit
     end = start + limit
 
     # Validate level_id and topic_id before querying the database
-    if not(
-        validate_question_database_id(level_id)
-        and validate_question_topic(topic_id)
+    if not (
+        validate_question_database_id(level_id) and validate_question_topic(topic_id)
     ):
         return {
-        "page": page,
-        "limit": limit,
-        "total": 0,
-        "items": [],
-    }
+            "page": page,
+            "limit": limit,
+            "total": 0,
+            "items": [],
+        }
 
     # Querying database
     results = []
     with db.session(level_id) as session:
-
         # Selecting all questions
         stmt = select(Questions)
 
