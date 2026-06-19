@@ -35,6 +35,9 @@ def add_filter_tag(stmt, tag: str):
 
 
 def add_filter_answered(stmt, answered: str, user_firebase_uid: str):
+    if not answered or not user_firebase_uid:
+        return stmt
+    
     if answered.lower() == "true":
         return stmt.outerjoin(Questions.users_link).where(
             (UserQuestion.user_firebase_uid == user_firebase_uid)

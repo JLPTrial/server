@@ -12,6 +12,7 @@ from src import main as main_module
 from src.core.config import settings
 from src.database import session as database_session
 from src.main import app
+from src.database.metadata import USER_METADATA, QUESTION_METADATA
 
 
 @pytest.fixture(scope="session")
@@ -35,8 +36,10 @@ def db_engines(tmp_path_factory: pytest.TempPathFactory) -> Generator[dict[str, 
     database_package.init_db = lambda: None
     main_module.init_db = lambda: None
 
-    for test_engine in test_engines.values():
-        SQLModel.metadata.create_all(test_engine)
+    USER_METADATA.create_all(test_engines["users"])
+    for name in test_engines:
+        if name != "users":
+            QUESTION_METADATA.create_all(test_engines[name])
 
     yield test_engines
 

@@ -21,9 +21,7 @@ class UserQuestion(SQLModel, table=True):
     __tablename__ = "user_question"
     metadata = QUESTION_METADATA
 
-    user_firebase_uid: str | None = Field(
-        default=None, foreign_key="user.firebase_uid", primary_key=True
-    )
+    user_firebase_uid: str | None = Field(default=None)
 
     question_id: int | None = Field(
         default=None, foreign_key="questions.id", primary_key=True
