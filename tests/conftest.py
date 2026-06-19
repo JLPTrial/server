@@ -5,14 +5,13 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
-from sqlmodel import SQLModel, Session
+from sqlmodel import Session, SQLModel
 
 from src import database as database_package
-from src.database import session as database_session
 from src import main as main_module
-from src.main import app
 from src.core.config import settings
-from src.models import User
+from src.database import session as database_session
+from src.main import app
 
 
 @pytest.fixture(scope="session")
@@ -49,6 +48,6 @@ def db(db_engines) -> Generator[Session, None, None]:
 
 
 @pytest.fixture()
-def client(db_engines) -> Generator[TestClient, None, None]:
+def client() -> Generator[TestClient, None, None]:
     with TestClient(app) as c:
         yield c

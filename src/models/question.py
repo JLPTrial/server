@@ -1,8 +1,15 @@
+from enum import Enum
 from typing import Optional
 
-from sqlalchemy import CheckConstraint, Column, String
 from sqlmodel import Field, Relationship, SQLModel
 
+from ..database.metadata import QUESTION_METADATA
+
+
+class QuestionStatus(Enum):
+    CORRECT = 2
+    INCORRECT = 1
+    NOT_ANSWERED = 0
 
 ######################
 # UserQuestion
@@ -11,13 +18,7 @@ class UserQuestion(SQLModel, table=True):
     """Stores the relationship between a user and a question, including answer status."""
 
     __tablename__ = "user_question"
-
-    __table_args__ = (
-        CheckConstraint(
-            "status IN ('answered', 'not_answered', 'wrong')",
-            name="user_question_status_check",
-        ),
-    )
+    metadata = QUESTION_METADATA
 
     user_firebase_uid: str | None = Field(
         default=None, foreign_key="user.firebase_uid", primary_key=True
@@ -27,8 +28,8 @@ class UserQuestion(SQLModel, table=True):
         default=None, foreign_key="questions.id", primary_key=True
     )
 
-    status: str = Field(
-        sa_column=Column(String, nullable=False), default="not_answered"
+    status: QuestionStatus = Field(
+        default=QuestionStatus.NOT_ANSWERED
     )
 
     selected_alternative: int | None = Field(default=None)
@@ -39,6 +40,7 @@ class UserQuestion(SQLModel, table=True):
 
 class QuestionTags(SQLModel, table=True):
     __tablename__ = "question_tags"
+    metadata = QUESTION_METADATA
 
     question_id: int | None = Field(
         default=None,
@@ -54,6 +56,8 @@ class QuestionTags(SQLModel, table=True):
 
 
 class Tags(SQLModel, table=True):
+    metadata = QUESTION_METADATA
+
     id: int | None = Field(default=None, primary_key=True)
 
     name: str = Field(nullable=False, unique=True)
@@ -65,6 +69,8 @@ class Tags(SQLModel, table=True):
 
 
 class Statement(SQLModel, table=True):
+    metadata = QUESTION_METADATA
+
     id: int | None = Field(default=None, primary_key=True)
     question_command: str = Field(nullable=False, unique=True)
     questions: list["Questions"] = Relationship(back_populates="statement")
@@ -72,6 +78,7 @@ class Statement(SQLModel, table=True):
 
 class ContextualTexts(SQLModel, table=True):
     __tablename__ = "contextual_texts"
+    metadata = QUESTION_METADATA
 
     id: int | None = Field(default=None, primary_key=True)
 
@@ -81,6 +88,8 @@ class ContextualTexts(SQLModel, table=True):
 
 
 class Alternatives(SQLModel, table=True):
+    metadata = QUESTION_METADATA
+
     id: int | None = Field(default=None, primary_key=True)
 
     alternative_1: str = Field(nullable=False)
@@ -94,6 +103,8 @@ class Alternatives(SQLModel, table=True):
 
 
 class Media(SQLModel, table=True):
+    metadata = QUESTION_METADATA
+
     id: int | None = Field(default=None, primary_key=True)
 
     contextual_text_id: int | None = Field(
@@ -109,6 +120,8 @@ class Media(SQLModel, table=True):
 
 
 class Questions(SQLModel, table=True):
+    metadata = QUESTION_METADATA
+
     id: int | None = Field(default=None, primary_key=True)
 
     alternative_id: int = Field(

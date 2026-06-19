@@ -1,15 +1,22 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import and_, or_
 from sqlmodel import select
 
 from ...api.dependencies.current_user import get_current_user
-from ...core.config import settings
 from ...database.session import DatabaseManagerDep
 from ...models import Questions, User
-from ...models.question import Tags, UserQuestion
 from ...models.question_response import QuestionListResponse
+from ..services.question import (
+    add_filter_answered,
+    # Filters
+    add_filter_question_id,
+    add_filter_tag,
+    add_filter_topic,
+    get_available_question_databases_ids,
+    validate_question_database_id,
+    validate_question_topic,
+)
 from ..utils.question_formatter import format_question
 
 router = APIRouter(tags=["questions"])
@@ -28,48 +35,25 @@ def read_questions(
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
+
     # Pagination logic
     start = (page - 1) * limit
     end = start + limit
 
     results = []
-    for question_database_title in settings.AVAILABLE_QUESTION_DATABASES.values():
+    for question_database_title in get_available_question_databases_ids():
         with db.session(question_database_title) as session:
             # Selecting all questions
             stmt = select(Questions)
 
             # Filter by question_id if provided
-            if question_id:
-                stmt = stmt.where(Questions.id == question_id)
+            stmt = add_filter_question_id(stmt, question_id)
 
             # Filter tag if provided
-            if tag:
-                stmt = stmt.join(Questions.tags).where(Tags.name.ilike(f"%{tag}%"))
+            stmt = add_filter_tag(stmt, tag)
 
             # Filter by answered status if provided
-            if answered is not None:
-                firebase_uid = _current_user.firebase_uid
-
-                stmt = stmt.outerjoin(Questions.users_link)
-
-                if answered.lower() == "true":
-                    stmt = stmt.where(
-                        and_(
-                            UserQuestion.user_firebase_uid == firebase_uid,
-                            UserQuestion.status == "answered",
-                        )
-                    )
-
-                elif answered.lower() == "false":
-                    stmt = stmt.where(
-                        or_(
-                            UserQuestion.user_firebase_uid.is_(None),
-                            and_(
-                                UserQuestion.user_firebase_uid == firebase_uid,
-                                UserQuestion.status != "answered",
-                            ),
-                        )
-                    )
+            stmt = add_filter_answered(stmt, answered, _current_user.firebase_uid)
 
             # Collecting results
             rows = session.exec(stmt).all()
@@ -98,48 +82,36 @@ def read_level_questions(
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
+
     # Pagination logic
     start = (page - 1) * limit
     end = start + limit
 
+    # Validate level_id and topic_id before querying the database
+    if not(validate_question_database_id(level_id)):
+        return {
+            "page": page,
+            "limit": limit,
+            "total": 0,
+            "items": [],
+        }
+
+    # Querying database
     results = []
-    if level_id in settings.AVAILABLE_QUESTION_DATABASES.values():
-        with db.session(level_id) as session:
-            # Selecting all questions
-            stmt = select(Questions)
+    with db.session(level_id) as session:
 
-            # Filter tag if provided
-            if tag:
-                stmt = stmt.join(Questions.tags).where(Tags.name.ilike(f"%{tag}%"))
+        # Selecting all questions
+        stmt = select(Questions)
 
-            # Filter by answered status if provided
-            if answered is not None:
-                firebase_uid = _current_user.firebase_uid
+        # Filter tag if provided
+        stmt = add_filter_tag(stmt, tag)
 
-                stmt = stmt.outerjoin(Questions.users_link)
+        # Filter by answered status if provided
+        stmt = add_filter_answered(stmt, answered, _current_user.firebase_uid)
 
-                if answered.lower() == "true":
-                    stmt = stmt.where(
-                        and_(
-                            UserQuestion.user_firebase_uid == firebase_uid,
-                            UserQuestion.status == "answered",
-                        )
-                    )
-
-                elif answered.lower() == "false":
-                    stmt = stmt.where(
-                        or_(
-                            UserQuestion.user_firebase_uid.is_(None),
-                            and_(
-                                UserQuestion.user_firebase_uid == firebase_uid,
-                                UserQuestion.status != "answered",
-                            ),
-                        )
-                    )
-
-            # Collecting results
-            rows = session.exec(stmt).all()
-            results.extend([format_question(q) for q in rows])
+        # Collecting results
+        rows = session.exec(stmt).all()
+        results = [format_question(q) for q in rows]
 
     # Return paginated response with question data
     return {
@@ -165,51 +137,42 @@ def read_level_topic_questions(
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
+
     # Pagination logic
     start = (page - 1) * limit
     end = start + limit
 
-    results = []
-    if (
-        level_id in settings.AVAILABLE_QUESTION_DATABASES.values()
-        and topic_id in settings.AVAILABLE_QUESTION_TOPICS
+    # Validate level_id and topic_id before querying the database
+    if not(
+        validate_question_database_id(level_id)
+        and validate_question_topic(topic_id)
     ):
-        with db.session(level_id) as session:
-            # Selecting all questions
-            stmt = select(Questions).where(Questions.question_type == topic_id)
+        return {
+        "page": page,
+        "limit": limit,
+        "total": 0,
+        "items": [],
+    }
 
-            # Filter tag if provided
-            if tag:
-                stmt = stmt.join(Questions.tags).where(Tags.name.ilike(f"%{tag}%"))
+    # Querying database
+    results = []
+    with db.session(level_id) as session:
 
-            # Filter by answered status if provided
-            if answered is not None:
-                firebase_uid = _current_user.firebase_uid
+        # Selecting all questions
+        stmt = select(Questions)
 
-                stmt = stmt.outerjoin(Questions.users_link)
+        # Filter by topic
+        stmt = add_filter_topic(stmt, topic_id)
 
-                if answered.lower() == "true":
-                    stmt = stmt.where(
-                        and_(
-                            UserQuestion.user_firebase_uid == firebase_uid,
-                            UserQuestion.status == "answered",
-                        )
-                    )
+        # Filter tag if provided
+        stmt = add_filter_tag(stmt, tag)
 
-                elif answered.lower() == "false":
-                    stmt = stmt.where(
-                        or_(
-                            UserQuestion.user_firebase_uid.is_(None),
-                            and_(
-                                UserQuestion.user_firebase_uid == firebase_uid,
-                                UserQuestion.status != "answered",
-                            ),
-                        )
-                    )
+        # Filter by answered status if provided
+        stmt = add_filter_answered(stmt, answered, _current_user.firebase_uid)
 
-            # Collecting results
-            rows = session.exec(stmt).all()
-            results.extend([format_question(q) for q in rows])
+        # Collecting results
+        rows = session.exec(stmt).all()
+        results = [format_question(q) for q in rows]
 
     # Return paginated response with question data
     return {
