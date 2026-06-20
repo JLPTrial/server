@@ -14,6 +14,7 @@ from ..services.question import (
     add_filter_tag,
     add_filter_topic,
     get_available_question_databases_ids,
+    get_question_database_title,
     validate_question_database_id,
     validate_question_topic,
 )
@@ -75,7 +76,7 @@ def read_questions(
 def read_level_questions(
     db: DatabaseManagerDep,
     _current_user: Annotated[User, Depends(get_current_user)],
-    level_id: str | None = None,  # N4 or N5, for example
+    level_id: int | None = None,  # 4 or 5, for example
     tag: str | None = None,
     answered: str | None = None,
     page: int = 1,
@@ -86,7 +87,7 @@ def read_level_questions(
     end = start + limit
 
     # Validate level_id and topic_id before querying the database
-    if not (validate_question_database_id(level_id)):
+    if level_id is None or not validate_question_database_id(level_id):
         return {
             "page": page,
             "limit": limit,
@@ -94,9 +95,11 @@ def read_level_questions(
             "items": [],
         }
 
+    question_database_title = get_question_database_title(level_id)
+
     # Querying database
     results = []
-    with db.session(level_id) as session:
+    with db.session(question_database_title) as session:
         # Selecting all questions
         stmt = select(Questions)
 
@@ -127,7 +130,7 @@ def read_level_questions(
 def read_level_topic_questions(
     db: DatabaseManagerDep,
     _current_user: Annotated[User, Depends(get_current_user)],
-    level_id: str | None = None,  # N4 or N5, for example
+    level_id: int | None = None,  # 4 or 5, for example
     topic_id: str | None = None,  # grammar, vocabulary, etc
     tag: str | None = None,
     answered: str | None = None,
@@ -139,8 +142,10 @@ def read_level_topic_questions(
     end = start + limit
 
     # Validate level_id and topic_id before querying the database
-    if not (
-        validate_question_database_id(level_id) and validate_question_topic(topic_id)
+    if (
+        level_id is None
+        or not validate_question_database_id(level_id)
+        and validate_question_topic(topic_id)
     ):
         return {
             "page": page,
@@ -149,9 +154,11 @@ def read_level_topic_questions(
             "items": [],
         }
 
+    question_database_title = get_question_database_title(level_id)
+
     # Querying database
     results = []
-    with db.session(level_id) as session:
+    with db.session(question_database_title) as session:
         # Selecting all questions
         stmt = select(Questions)
 
