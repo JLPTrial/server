@@ -39,7 +39,7 @@ def _seed_question(session: Session, *, question_text: str, question_type: str) 
 
 def test_question_requires_login(client: TestClient, monkeypatch) -> None:
 	monkeypatch.setattr(settings, "SECURE_REQUEST", True)
-	response = client.get("/levels/N5/questions")
+	response = client.get("/levels/5/questions")
 
 	assert response.status_code == 401
 	assert response.json()["detail"] == "Invalid Firebase session cookie"
@@ -75,7 +75,7 @@ def test_level_questions_return_item_when_logged_in(
 	)
 
 	client.cookies.set(SESSION_COOKIE_NAME, "firebase-session-cookie", path="/")
-	response = client.get("/levels/N5/questions")
+	response = client.get("/levels/5/questions")
 	client.cookies.clear()
 
 	assert response.status_code == 200

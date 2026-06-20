@@ -51,6 +51,6 @@ def db(db_engines) -> Generator[Session, None, None]:
 
 
 @pytest.fixture()
-def client() -> Generator[TestClient, None, None]:
+def client(db_engines) -> Generator[TestClient, None, None]:
     with TestClient(app) as c:
         yield c
