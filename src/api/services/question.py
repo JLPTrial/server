@@ -41,19 +41,14 @@ def add_filter_tag(stmt: Any, tag: str | None) -> Any:
     return stmt
 
 
-def add_filter_answered(stmt: Any, answered: str | None, user_firebase_uid: str) -> Any:
-    if not answered or not user_firebase_uid:
+def add_filter_answered(stmt: Any, answered: bool | None, user_firebase_uid: str) -> Any:
+    if not answered or answered == "false" or not user_firebase_uid:
         return stmt
 
-    if answered.lower() == "true":
-        return stmt.outerjoin(Questions.users_link).where(
-            (UserQuestion.user_firebase_uid == user_firebase_uid)
-            & (UserQuestion.status != QuestionStatus.NOT_ANSWERED)
+    return stmt.outerjoin(Questions.users_link).where(
+    (UserQuestion.user_firebase_uid == user_firebase_uid)
+        & (
+            (UserQuestion.status == QuestionStatus.CORRECT)
+            | (UserQuestion.status == QuestionStatus.INCORRECT)
         )
-    elif answered.lower() == "false":
-        return stmt.outerjoin(Questions.users_link).where(
-            (UserQuestion.user_firebase_uid != user_firebase_uid)
-            | (UserQuestion.status == QuestionStatus.NOT_ANSWERED)
-        )
-
-    return stmt
+    )

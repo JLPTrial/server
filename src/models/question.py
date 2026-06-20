@@ -7,9 +7,8 @@ from ..database.metadata import QUESTION_METADATA
 
 
 class QuestionStatus(Enum):
-    CORRECT = 2
-    INCORRECT = 1
-    NOT_ANSWERED = 0
+    CORRECT = 1
+    INCORRECT = 0
 
 
 ######################
@@ -27,7 +26,7 @@ class UserQuestion(SQLModel, table=True):
         default=None, foreign_key="questions.id", primary_key=True
     )
 
-    status: QuestionStatus = Field(default=QuestionStatus.NOT_ANSWERED)
+    status: QuestionStatus | None = Field(default=None)
 
     selected_alternative: int | None = Field(default=None)
 
