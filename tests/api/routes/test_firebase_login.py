@@ -23,7 +23,7 @@ def test_firebase_signup_creates_local_user(client: TestClient, db, monkeypatch)
 	)
 
 	response = client.post(
-		"/signup",
+		"/users/signup",
 		json={"uid_token": "firebase-id-token", "name": "Fulano"},
 	)
 
@@ -53,7 +53,7 @@ def test_firebase_login_requires_registered_user(client: TestClient, monkeypatch
 		lambda uid_token: _firebase_identity("firebase-uid-456", "missing@jlptrial.com", "Missing"),
 	)
 
-	response = client.post("/login", json={"uid_token": "firebase-id-token"})
+	response = client.post("/users/login", json={"uid_token": "firebase-id-token"})
 
 	assert response.status_code == 401
 	assert response.json()["detail"] == "User is not registered"
@@ -79,7 +79,7 @@ def test_firebase_login_sets_session_cookie(client: TestClient, db, monkeypatch)
 		lambda uid_token: "firebase-session-cookie",
 	)
 
-	response = client.post("/login", json={"uid_token": "firebase-id-token"})
+	response = client.post("/users/login", json={"uid_token": "firebase-id-token"})
 
 	assert response.status_code == 200
 	assert response.json() == {
@@ -108,7 +108,7 @@ def test_firebase_refresh_reads_session_cookie(client: TestClient, db, monkeypat
 	)
 
 	client.cookies.set(SESSION_COOKIE_NAME, "firebase-session-cookie", path="/")
-	response = client.post("/refresh")
+	response = client.post("/users/refresh")
 	client.cookies.clear()
 
 	assert response.status_code == 200
@@ -135,7 +135,7 @@ def test_firebase_logout_clears_session_cookie(client: TestClient, monkeypatch) 
 	monkeypatch.setattr(login_routes, "revoke_firebase_sessions", fake_revoke)
 
 	client.cookies.set(SESSION_COOKIE_NAME, "firebase-session-cookie", path="/")
-	response = client.post("/logout")
+	response = client.post("/users/logout")
 	client.cookies.clear()
 
 	assert response.status_code == 200

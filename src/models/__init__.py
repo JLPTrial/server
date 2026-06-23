@@ -10,6 +10,7 @@ from .question import (
     QuestionTags,
     Statement,
     Tags,
+    UserQuestion,
 )
 from .user import User
 
@@ -24,4 +25,5 @@ __all__ = [
     "Statement",
     "Tags",
     "User",
+    "UserQuestion",
 ]

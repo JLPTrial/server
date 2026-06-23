@@ -8,7 +8,7 @@ from ...core.firebase.operations import (
     revoke_firebase_sessions,
     verify_firebase_session_cookie,
 )
-from ...database.session import SessionDep
+from ...database.session import DatabaseManagerDep
 from ...models import (
     FirebaseLoginRequest,
     FirebaseSignupRequest,
@@ -25,7 +25,7 @@ from ..utils.cookies import (
     set_session_cookie,
 )
 
-router = APIRouter(tags=["login"])
+router = APIRouter(prefix="/users", tags=["login"])
 
 
 @router.post(
@@ -33,9 +33,9 @@ router = APIRouter(tags=["login"])
     responses={401: {"description": "Invalid credentials"}},
 )
 def signup(
-    response: Response, session: SessionDep, credentials: FirebaseSignupRequest
+    response: Response, db: DatabaseManagerDep, credentials: FirebaseSignupRequest
 ) -> Any:
-    user = signup_user(session, credentials)
+    user = signup_user(db, credentials)
     session_cookie = create_firebase_session_cookie(credentials.uid_token)
     set_session_cookie(response, session_cookie)
     return {
@@ -49,10 +49,10 @@ def signup(
 
 @router.post("/login", responses={401: {"description": "Invalid credentials"}})
 def login(
-    response: Response, session: SessionDep, credentials: FirebaseLoginRequest
+    response: Response, db: DatabaseManagerDep, credentials: FirebaseLoginRequest
 ) -> Any:
     try:
-        user = login_user(session, credentials)
+        user = login_user(db, credentials)
     except ValueError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
     except LookupError as exc:
@@ -76,13 +76,13 @@ def login(
         404: {"description": "User not found"},
     },
 )
-def refresh(request: Request, session: SessionDep) -> Any:
+def refresh(request: Request, db: DatabaseManagerDep) -> Any:
     session_cookie = request.cookies.get(SESSION_COOKIE_NAME)
     if not session_cookie:
         raise HTTPException(status_code=401, detail=INVALID_SESSION_COOKIE_MESSAGE)
 
     try:
-        user = get_user_from_session_cookie(session, session_cookie)
+        user = get_user_from_session_cookie(db, session_cookie)
     except ValueError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
     except LookupError as exc:

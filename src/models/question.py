@@ -1,10 +1,42 @@
+from enum import Enum
 from typing import Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
+from ..database.metadata import QUESTION_METADATA
+
+
+class QuestionStatus(Enum):
+    CORRECT = 1
+    INCORRECT = 0
+
+
+######################
+# UserQuestion
+######################
+class UserQuestion(SQLModel, table=True):
+    """Stores the relationship between a user and a question, including answer status."""
+
+    __tablename__ = "user_question"
+    metadata = QUESTION_METADATA
+
+    user_firebase_uid: str | None = Field(default=None)
+
+    question_id: int | None = Field(
+        default=None, foreign_key="questions.id", primary_key=True
+    )
+
+    status: QuestionStatus | None = Field(default=None)
+
+    selected_alternative: int | None = Field(default=None)
+
+    # Relationships
+    question: Optional["Questions"] = Relationship(back_populates="users_link")
+
 
 class QuestionTags(SQLModel, table=True):
     __tablename__ = "question_tags"
+    metadata = QUESTION_METADATA
 
     question_id: int | None = Field(
         default=None,
@@ -20,6 +52,8 @@ class QuestionTags(SQLModel, table=True):
 
 
 class Tags(SQLModel, table=True):
+    metadata = QUESTION_METADATA
+
     id: int | None = Field(default=None, primary_key=True)
 
     name: str = Field(nullable=False, unique=True)
@@ -31,6 +65,8 @@ class Tags(SQLModel, table=True):
 
 
 class Statement(SQLModel, table=True):
+    metadata = QUESTION_METADATA
+
     id: int | None = Field(default=None, primary_key=True)
     question_command: str = Field(nullable=False, unique=True)
     questions: list["Questions"] = Relationship(back_populates="statement")
@@ -38,6 +74,7 @@ class Statement(SQLModel, table=True):
 
 class ContextualTexts(SQLModel, table=True):
     __tablename__ = "contextual_texts"
+    metadata = QUESTION_METADATA
 
     id: int | None = Field(default=None, primary_key=True)
 
@@ -47,6 +84,8 @@ class ContextualTexts(SQLModel, table=True):
 
 
 class Alternatives(SQLModel, table=True):
+    metadata = QUESTION_METADATA
+
     id: int | None = Field(default=None, primary_key=True)
 
     alternative_1: str = Field(nullable=False)
@@ -60,6 +99,8 @@ class Alternatives(SQLModel, table=True):
 
 
 class Media(SQLModel, table=True):
+    metadata = QUESTION_METADATA
+
     id: int | None = Field(default=None, primary_key=True)
 
     contextual_text_id: int | None = Field(
@@ -75,6 +116,8 @@ class Media(SQLModel, table=True):
 
 
 class Questions(SQLModel, table=True):
+    metadata = QUESTION_METADATA
+
     id: int | None = Field(default=None, primary_key=True)
 
     alternative_id: int = Field(
@@ -94,3 +137,5 @@ class Questions(SQLModel, table=True):
     tags: list["Tags"] = Relationship(
         back_populates="questions", link_model=QuestionTags
     )
+
+    users_link: list[UserQuestion] = Relationship(back_populates="question")
