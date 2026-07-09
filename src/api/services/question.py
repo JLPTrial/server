@@ -1,3 +1,5 @@
+from typing import cast
+
 from sqlmodel import select
 
 from ...database.session import DatabaseManagerDep
@@ -18,7 +20,7 @@ def get_questions(
     answered: str | None = None,
     page: int = 1,
     limit: int = 20,
-):
+) -> dict[str, object]:
     results = []
     for (
         question_database_title
@@ -54,12 +56,14 @@ def get_level_questions(
     answered: str | None = None,
     page: int = 1,
     limit: int = 20,
-):
+) -> dict[str, object]:
     # Validate level_id before querying the database
     if not (question_utils.validate_parameters({"level_id": level_id})):
         return question_utils.wrap_output([], page, limit)
 
-    question_database_title = question_utils.get_question_database_title(level_id)
+    question_database_title = question_utils.get_question_database_title(
+        cast(int, level_id)
+    )
 
     results = []
     with db.session(question_database_title) as session:
@@ -91,14 +95,16 @@ def get_level_topic_questions(
     answered: str | None = None,
     page: int = 1,
     limit: int = 20,
-):
+) -> dict[str, object]:
     # Validate level_id and topic_id before querying the database
     if not (
         question_utils.validate_parameters({"level_id": level_id, "topic": topic_id})
     ):
         return question_utils.wrap_output([], page, limit)
 
-    question_database_title = question_utils.get_question_database_title(level_id)
+    question_database_title = question_utils.get_question_database_title(
+        cast(int, level_id)
+    )
 
     results = []
     with db.session(question_database_title) as session:

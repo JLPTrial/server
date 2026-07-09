@@ -5,7 +5,9 @@ from ...models.question import Questions, QuestionStatus, Tags, UserQuestion
 
 
 # Output formatter
-def wrap_output(questions: list[Questions], page: int, limit: int) -> dict[str, object]:
+def wrap_output(
+    questions: list[dict[str, object]], page: int, limit: int
+) -> dict[str, object]:
     start = (page - 1) * limit
     end = start + limit
 
@@ -27,7 +29,7 @@ def get_question_database_title(database_id: int) -> str:
 
 
 # Validations
-def validate_parameters(parameters: dict[str, Any]):
+def validate_parameters(parameters: dict[str, Any]) -> bool:
     for key, value in parameters.items():
         if key == "topic" and not validate_question_topic(value):
             return False
@@ -75,25 +77,25 @@ def add_filter_answered(stmt: Any, answered: str | None, user_firebase_uid: str)
         return stmt
 
     if answered == "answered":
-        return stmt.join(Questions.user_questions).where(
+        return stmt.join(Questions.users_link).where(
             UserQuestion.user_firebase_uid == user_firebase_uid
         )
 
     if answered == "unanswered":
         return stmt.where(
-            ~Questions.user_questions.any(
+            ~cast(Any, Questions.users_link).any(
                 UserQuestion.user_firebase_uid == user_firebase_uid
             )
         )
 
     if answered == "correct":
-        return stmt.join(Questions.user_questions).where(
+        return stmt.join(Questions.users_link).where(
             (UserQuestion.user_firebase_uid == user_firebase_uid)
-            & (UserQuestion.status == QuestionStatus.correct)
+            & (UserQuestion.status == QuestionStatus.CORRECT)
         )
 
     if answered == "incorrect":
-        return stmt.join(Questions.user_questions).where(
+        return stmt.join(Questions.users_link).where(
             (UserQuestion.user_firebase_uid == user_firebase_uid)
-            & (UserQuestion.status == QuestionStatus.incorrect)
+            & (UserQuestion.status == QuestionStatus.INCORRECT)
         )
