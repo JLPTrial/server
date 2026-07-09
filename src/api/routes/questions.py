@@ -20,7 +20,7 @@ def read_questions(
     _current_user: Annotated[User, Depends(get_current_user)],
     question_id: int | None = None,
     tag: str | None = None,
-    answered: str | None = None,
+    answer_status: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
@@ -29,7 +29,7 @@ def read_questions(
         _current_user=_current_user,
         question_id=question_id,
         tag=tag,
-        answered=answered,
+        answer_status=answer_status,
         page=page,
         limit=limit,
     )
@@ -45,7 +45,7 @@ def read_level_questions(
     _current_user: Annotated[User, Depends(get_current_user)],
     level_id: int | None = None,  # 4 or 5, for example
     tag: str | None = None,
-    answered: str | None = None,
+    answer_status: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
@@ -54,7 +54,7 @@ def read_level_questions(
         _current_user=_current_user,
         level_id=level_id,
         tag=tag,
-        answered=answered,
+        answer_status=answer_status,
         page=page,
         limit=limit,
     )
@@ -71,7 +71,7 @@ def read_level_topic_questions(
     level_id: int | None = None,  # 4 or 5, for example
     topic_id: str | None = None,  # grammar, vocabulary, etc
     tag: str | None = None,
-    answered: str | None = None,
+    answer_status: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
@@ -81,7 +81,7 @@ def read_level_topic_questions(
         level_id=level_id,
         topic_id=topic_id,
         tag=tag,
-        answered=answered,
+        answer_status=answer_status,
         page=page,
         limit=limit,
     )

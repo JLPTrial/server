@@ -17,7 +17,7 @@ def get_questions(
     _current_user: User,
     question_id: int | None = None,
     tag: str | None = None,
-    answered: str | None = None,
+    answer_status: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
@@ -35,9 +35,9 @@ def get_questions(
             # Filter tag if provided
             stmt = question_utils.add_filter_tag(stmt, tag)
 
-            # Filter by answered status if provided
-            stmt = question_utils.add_filter_answered(
-                stmt, answered, _current_user.firebase_uid
+            # Filter by answer status if provided
+            stmt = question_utils.add_filter_answer_status(
+                stmt, answer_status, _current_user.firebase_uid
             )
 
             # Collecting results
@@ -53,7 +53,7 @@ def get_level_questions(
     _current_user: User,
     level_id: int | None = None,  # 4 or 5, for example
     tag: str | None = None,
-    answered: str | None = None,
+    answer_status: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
@@ -73,9 +73,9 @@ def get_level_questions(
         # Filter tag if provided
         stmt = question_utils.add_filter_tag(stmt, tag)
 
-        # Filter by answered status if provided
-        stmt = question_utils.add_filter_answered(
-            stmt, answered, _current_user.firebase_uid
+        # Filter by answer status if provided
+        stmt = question_utils.add_filter_answer_status(
+            stmt, answer_status, _current_user.firebase_uid
         )
 
         # Collecting results
@@ -92,7 +92,7 @@ def get_level_topic_questions(
     level_id: int | None = None,  # 4 or 5, for example
     topic_id: str | None = None,  # grammar, vocabulary, etc
     tag: str | None = None,
-    answered: str | None = None,
+    answer_status: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
@@ -117,9 +117,9 @@ def get_level_topic_questions(
         # Filter tag if provided
         stmt = question_utils.add_filter_tag(stmt, tag)
 
-        # Filter by answered status if provided
-        stmt = question_utils.add_filter_answered(
-            stmt, answered, _current_user.firebase_uid
+        # Filter by answer status if provided
+        stmt = question_utils.add_filter_answer_status(
+            stmt, answer_status, _current_user.firebase_uid
         )
 
         # Collecting results

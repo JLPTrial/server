@@ -43,7 +43,7 @@ class Settings(BaseSettings):
         "listening",
     ]
 
-    AVAILABLE_QUESTION_ANSWERED_FILTERS: list[str] = [
+    AVAILABLE_QUESTION_ANSWER_STATUSES: list[str] = [
         "all",
         "answered",
         "unanswered",

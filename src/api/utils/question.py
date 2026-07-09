@@ -35,13 +35,13 @@ def validate_parameters(parameters: dict[str, Any]) -> bool:
             return False
         if key == "level_id" and not validate_question_level_id(value):
             return False
-        if key == "answered" and not validate_answered_parameter(value):
+        if key == "answer_status" and not validate_answer_status_parameter(value):
             return False
     return True
 
 
-def validate_answered_parameter(answered: str | None) -> bool:
-    return answered in settings.AVAILABLE_QUESTION_ANSWERED_FILTERS
+def validate_answer_status_parameter(answer_status: str | None) -> bool:
+    return answer_status in settings.AVAILABLE_QUESTION_ANSWER_STATUSES
 
 
 def validate_question_level_id(level_id: int | None) -> bool:
@@ -72,29 +72,31 @@ def add_filter_tag(stmt: Any, tag: str | None) -> Any:
     return stmt
 
 
-def add_filter_answered(stmt: Any, answered: str | None, user_firebase_uid: str) -> Any:
-    if not answered or answered == "all" or not user_firebase_uid:
+def add_filter_answer_status(
+    stmt: Any, answer_status: str | None, user_firebase_uid: str
+) -> Any:
+    if not answer_status or answer_status == "all" or not user_firebase_uid:
         return stmt
 
-    if answered == "answered":
+    if answer_status == "answered":
         return stmt.join(Questions.users_link).where(
             UserQuestion.user_firebase_uid == user_firebase_uid
         )
 
-    if answered == "unanswered":
+    if answer_status == "unanswered":
         return stmt.where(
             ~cast(Any, Questions.users_link).any(
                 UserQuestion.user_firebase_uid == user_firebase_uid
             )
         )
 
-    if answered == "correct":
+    if answer_status == "correct":
         return stmt.join(Questions.users_link).where(
             (UserQuestion.user_firebase_uid == user_firebase_uid)
             & (UserQuestion.status == QuestionStatus.CORRECT)
         )
 
-    if answered == "incorrect":
+    if answer_status == "incorrect":
         return stmt.join(Questions.users_link).where(
             (UserQuestion.user_firebase_uid == user_firebase_uid)
             & (UserQuestion.status == QuestionStatus.INCORRECT)
