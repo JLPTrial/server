@@ -43,6 +43,14 @@ class Settings(BaseSettings):
         "listening",
     ]
 
+    AVAILABLE_QUESTION_ANSWER_STATUSES: list[str] = [
+        "all",
+        "answered",
+        "unanswered",
+        "correct",
+        "incorrect",
+    ]
+
     @property
     def IS_PROD(self) -> bool:
         return self.APP_FLAVOR.strip().lower() == "prod"

@@ -1,54 +1,130 @@
-from typing import Any, cast
+from typing import cast
 
-from ...core.config import settings
-from ...models.question import Questions, QuestionStatus, Tags, UserQuestion
+from sqlmodel import select
 
-
-def get_available_question_databases_ids() -> list[str]:
-    return list(settings.AVAILABLE_QUESTION_DATABASES.values())
-
-
-def get_question_database_title(database_id: int) -> str:
-    return settings.AVAILABLE_QUESTION_DATABASES[database_id]
+from ...database.session import DatabaseManagerDep
+from ...models.question import Questions
+from ...models.user import User
+from ..utils import question as question_utils
+from ..utils.question_formatter import format_question
 
 
-# Validations
-def validate_question_database_id(database_id: int | None) -> bool:
-    return database_id in settings.AVAILABLE_QUESTION_DATABASES
+##################
+# Route Functions
+##################
+def get_questions(
+    db: DatabaseManagerDep,
+    _current_user: User,
+    question_id: int | None = None,
+    tag: str | None = None,
+    answer_status: str | None = None,
+    page: int = 1,
+    limit: int = 20,
+) -> dict[str, object]:
+    results = []
+    for (
+        question_database_title
+    ) in question_utils.get_available_question_databases_ids():
+        with db.session(question_database_title) as session:
+            # Selecting all questions
+            stmt = select(Questions)
+
+            # Filter by question_id if provided
+            stmt = question_utils.add_filter_question_id(stmt, question_id)
+
+            # Filter tag if provided
+            stmt = question_utils.add_filter_tag(stmt, tag)
+
+            # Filter by answer status if provided
+            stmt = question_utils.add_filter_answer_status(
+                stmt, answer_status, _current_user.firebase_uid
+            )
+
+            # Collecting results
+            rows = session.exec(stmt).all()
+            results.extend([format_question(q) for q in rows])
+
+    # Return paginated response with question data
+    return question_utils.wrap_output(results, page, limit)
 
 
-def validate_question_topic(topic: str | None) -> bool:
-    return topic in settings.AVAILABLE_QUESTION_TOPICS
+def get_level_questions(
+    db: DatabaseManagerDep,
+    _current_user: User,
+    level_id: int | None = None,  # 4 or 5, for example
+    tag: str | None = None,
+    answer_status: str | None = None,
+    page: int = 1,
+    limit: int = 20,
+) -> dict[str, object]:
+    # Validate level_id before querying the database
+    if not (question_utils.validate_parameters({"level_id": level_id})):
+        return question_utils.wrap_output([], page, limit)
 
-
-# Filters
-def add_filter_question_id(stmt: Any, question_id: int | None) -> Any:
-    if question_id:
-        return stmt.where(Questions.id == question_id)
-    return stmt
-
-
-def add_filter_topic(stmt: Any, topic: str | None) -> Any:
-    if topic:
-        return stmt.where(Questions.question_type == topic)
-    return stmt
-
-
-def add_filter_tag(stmt: Any, tag: str | None) -> Any:
-    if tag:
-        # Eu realmente não gosto de usar cast, mas aparentemente, o mypy sofre sem ele...
-        return stmt.join(Questions.tags).where(cast(Any, Tags.name).ilike(f"%{tag}%"))
-    return stmt
-
-
-def add_filter_answered(stmt: Any, answered: str | None, user_firebase_uid: str) -> Any:
-    if not answered or answered == "false" or not user_firebase_uid:
-        return stmt
-
-    return stmt.outerjoin(Questions.users_link).where(
-        (UserQuestion.user_firebase_uid == user_firebase_uid)
-        & (
-            (UserQuestion.status == QuestionStatus.CORRECT)
-            | (UserQuestion.status == QuestionStatus.INCORRECT)
-        )
+    question_database_title = question_utils.get_question_database_title(
+        cast(int, level_id)
     )
+
+    results = []
+    with db.session(question_database_title) as session:
+        # Selecting all questions
+        stmt = select(Questions)
+
+        # Filter tag if provided
+        stmt = question_utils.add_filter_tag(stmt, tag)
+
+        # Filter by answer status if provided
+        stmt = question_utils.add_filter_answer_status(
+            stmt, answer_status, _current_user.firebase_uid
+        )
+
+        # Collecting results
+        rows = session.exec(stmt).all()
+        results = [format_question(q) for q in rows]
+
+    # Return paginated response with question data
+    return question_utils.wrap_output(results, page, limit)
+
+
+def get_level_topic_questions(
+    db: DatabaseManagerDep,
+    _current_user: User,
+    level_id: int | None = None,  # 4 or 5, for example
+    topic_id: str | None = None,  # grammar, vocabulary, etc
+    tag: str | None = None,
+    answer_status: str | None = None,
+    page: int = 1,
+    limit: int = 20,
+) -> dict[str, object]:
+    # Validate level_id and topic_id before querying the database
+    if not (
+        question_utils.validate_parameters({"level_id": level_id, "topic": topic_id})
+    ):
+        return question_utils.wrap_output([], page, limit)
+
+    question_database_title = question_utils.get_question_database_title(
+        cast(int, level_id)
+    )
+
+    results = []
+    with db.session(question_database_title) as session:
+        # Selecting all questions
+        stmt = select(Questions)
+
+        # Filter by topic
+        stmt = question_utils.add_filter_topic(stmt, topic_id)
+
+        # Filter tag if provided
+        stmt = question_utils.add_filter_tag(stmt, tag)
+
+        # Filter by answer status if provided
+        stmt = question_utils.add_filter_answer_status(
+            stmt, answer_status, _current_user.firebase_uid
+        )
+
+        # Collecting results
+        rows = session.exec(stmt).all()
+        results = [format_question(q) for q in rows]
+
+    # Return paginated response with question data
+    return question_utils.wrap_output(results, page, limit)
