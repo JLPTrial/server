@@ -1,14 +1,11 @@
 from typing import Any, cast
 
 from ...core.config import settings
-
 from ...models.question import Questions, QuestionStatus, Tags, UserQuestion
 
 
 # Output formatter
-def wrap_output(
-    questions: list[Questions], page: int, limit: int
-) -> dict[str, object]:
+def wrap_output(questions: list[Questions], page: int, limit: int) -> dict[str, object]:
     start = (page - 1) * limit
     end = start + limit
 
@@ -81,20 +78,22 @@ def add_filter_answered(stmt: Any, answered: str | None, user_firebase_uid: str)
         return stmt.join(Questions.user_questions).where(
             UserQuestion.user_firebase_uid == user_firebase_uid
         )
-    
+
     if answered == "unanswered":
         return stmt.where(
-            ~Questions.user_questions.any(UserQuestion.user_firebase_uid == user_firebase_uid)
+            ~Questions.user_questions.any(
+                UserQuestion.user_firebase_uid == user_firebase_uid
+            )
         )
-    
+
     if answered == "correct":
         return stmt.join(Questions.user_questions).where(
-            (UserQuestion.user_firebase_uid == user_firebase_uid) &
-            (UserQuestion.status == QuestionStatus.correct)
+            (UserQuestion.user_firebase_uid == user_firebase_uid)
+            & (UserQuestion.status == QuestionStatus.correct)
         )
-    
+
     if answered == "incorrect":
         return stmt.join(Questions.user_questions).where(
-            (UserQuestion.user_firebase_uid == user_firebase_uid) &
-            (UserQuestion.status == QuestionStatus.incorrect)
+            (UserQuestion.user_firebase_uid == user_firebase_uid)
+            & (UserQuestion.status == QuestionStatus.incorrect)
         )

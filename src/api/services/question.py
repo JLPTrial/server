@@ -1,12 +1,10 @@
 from sqlmodel import select
 
-from ...models.user import User
-from ...models.question import Questions
-
-from ..utils.question_formatter import format_question
-from ..utils import question as question_utils
-
 from ...database.session import DatabaseManagerDep
+from ...models.question import Questions
+from ...models.user import User
+from ..utils import question as question_utils
+from ..utils.question_formatter import format_question
 
 
 ##################
@@ -21,11 +19,11 @@ def get_questions(
     page: int = 1,
     limit: int = 20,
 ):
-    
     results = []
-    for question_database_title in question_utils.get_available_question_databases_ids():
+    for (
+        question_database_title
+    ) in question_utils.get_available_question_databases_ids():
         with db.session(question_database_title) as session:
-
             # Selecting all questions
             stmt = select(Questions)
 
@@ -36,7 +34,9 @@ def get_questions(
             stmt = question_utils.add_filter_tag(stmt, tag)
 
             # Filter by answered status if provided
-            stmt = question_utils.add_filter_answered(stmt, answered, _current_user.firebase_uid)
+            stmt = question_utils.add_filter_answered(
+                stmt, answered, _current_user.firebase_uid
+            )
 
             # Collecting results
             rows = session.exec(stmt).all()
@@ -56,7 +56,7 @@ def get_level_questions(
     limit: int = 20,
 ):
     # Validate level_id before querying the database
-    if not(question_utils.validate_parameters({"level_id": level_id})):
+    if not (question_utils.validate_parameters({"level_id": level_id})):
         return question_utils.wrap_output([], page, limit)
 
     question_database_title = question_utils.get_question_database_title(level_id)
@@ -70,7 +70,9 @@ def get_level_questions(
         stmt = question_utils.add_filter_tag(stmt, tag)
 
         # Filter by answered status if provided
-        stmt = question_utils.add_filter_answered(stmt, answered, _current_user.firebase_uid)
+        stmt = question_utils.add_filter_answered(
+            stmt, answered, _current_user.firebase_uid
+        )
 
         # Collecting results
         rows = session.exec(stmt).all()
@@ -90,11 +92,12 @@ def get_level_topic_questions(
     page: int = 1,
     limit: int = 20,
 ):
-    
     # Validate level_id and topic_id before querying the database
-    if not(question_utils.validate_parameters({"level_id": level_id, "topic": topic_id})):
+    if not (
+        question_utils.validate_parameters({"level_id": level_id, "topic": topic_id})
+    ):
         return question_utils.wrap_output([], page, limit)
-    
+
     question_database_title = question_utils.get_question_database_title(level_id)
 
     results = []
@@ -109,7 +112,9 @@ def get_level_topic_questions(
         stmt = question_utils.add_filter_tag(stmt, tag)
 
         # Filter by answered status if provided
-        stmt = question_utils.add_filter_answered(stmt, answered, _current_user.firebase_uid)
+        stmt = question_utils.add_filter_answered(
+            stmt, answered, _current_user.firebase_uid
+        )
 
         # Collecting results
         rows = session.exec(stmt).all()

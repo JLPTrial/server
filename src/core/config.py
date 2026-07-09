@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     ]
 
     AVAILABLE_QUESTION_ANSWERED_FILTERS: list[str] = [
-        "all", 
+        "all",
         "answered",
         "unanswered",
         "correct",

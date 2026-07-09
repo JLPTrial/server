@@ -24,7 +24,6 @@ def read_questions(
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
-    
     return question_services.get_questions(
         db=db,
         _current_user=_current_user,
@@ -32,7 +31,7 @@ def read_questions(
         tag=tag,
         answered=answered,
         page=page,
-        limit=limit
+        limit=limit,
     )
 
 
@@ -50,7 +49,6 @@ def read_level_questions(
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
-    
     return question_services.get_level_questions(
         db=db,
         _current_user=_current_user,
@@ -58,7 +56,7 @@ def read_level_questions(
         tag=tag,
         answered=answered,
         page=page,
-        limit=limit
+        limit=limit,
     )
 
 
@@ -77,7 +75,6 @@ def read_level_topic_questions(
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
-   
     return question_services.get_level_topic_questions(
         db=db,
         _current_user=_current_user,
@@ -86,5 +83,5 @@ def read_level_topic_questions(
         tag=tag,
         answered=answered,
         page=page,
-        limit=limit
+        limit=limit,
     )
