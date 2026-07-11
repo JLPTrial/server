@@ -24,16 +24,9 @@ class Settings(BaseSettings):
     DEV_BACKEND_CORS_ORIGINS: str = "*"
     PROD_BACKEND_CORS_ORIGINS: str = ""
 
-    USERS_DB_FILE: str = str(SERVER_DIR / "data" / "users" / "users.db")
-    SQLITE_FILE_N4: str = str(SERVER_DIR / "data" / "N4" / "N4.db")
-    SQLITE_FILE_N5: str = str(SERVER_DIR / "data" / "N5" / "N5.db")
+    SERVER_DB_FILE: str = str(SERVER_DIR / "data" / "server.db")
 
-    AVAILABLE_QUESTION_DATABASES: dict[int, str] = {4: "N4", 5: "N5"}
-    DATABASE_PATHS: dict[str, str] = {
-        "users": USERS_DB_FILE,
-        "N5": SQLITE_FILE_N5,
-        "N4": SQLITE_FILE_N4,
-    }
+    AVAILABLE_QUESTION_LEVELS: dict[int, str] = {4: "N4", 5: "N5"}
 
     AVAILABLE_QUESTION_TOPICS: list[str] = [
         "grammar",
@@ -50,6 +43,10 @@ class Settings(BaseSettings):
         "correct",
         "incorrect",
     ]
+
+    @property
+    def DATABASE_URL(self) -> str:
+        return f"sqlite:///{self.SERVER_DB_FILE}"
 
     @property
     def IS_PROD(self) -> bool:

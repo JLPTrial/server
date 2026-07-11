@@ -15,7 +15,7 @@ USER_NOT_FOUND_MESSAGE = "User not found"  # nosec B105
 
 
 def signup_user(db: DatabaseManagerDep, credentials: FirebaseSignupRequest) -> User:
-    with db.session("users") as session:
+    with db.session() as session:
         try:
             identity = verify_firebase_id_token(credentials.uid_token)
         except FirebaseTokenError as exc:
@@ -51,7 +51,7 @@ def signup_user(db: DatabaseManagerDep, credentials: FirebaseSignupRequest) -> U
 
 
 def login_user(db: DatabaseManagerDep, credentials: FirebaseLoginRequest) -> User:
-    with db.session("users") as session:
+    with db.session() as session:
         try:
             identity = verify_firebase_id_token(credentials.uid_token)
         except FirebaseTokenError as exc:
@@ -65,7 +65,7 @@ def login_user(db: DatabaseManagerDep, credentials: FirebaseLoginRequest) -> Use
 
 
 def get_user_from_session_cookie(db: DatabaseManagerDep, session_cookie: str) -> User:
-    with db.session("users") as session:
+    with db.session() as session:
         try:
             identity = verify_firebase_session_cookie(session_cookie)
         except FirebaseTokenError as exc:

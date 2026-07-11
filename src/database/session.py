@@ -1,30 +1,37 @@
-from collections.abc import Mapping
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Depends
+from sqlalchemy import event
 from sqlalchemy.engine import Engine
 from sqlmodel import Session, create_engine
 
 from ..core.config import settings
 
-ENGINES: dict[str, Engine] = {
-    name: create_engine(
-        f"sqlite:///{path}",
-        connect_args={"check_same_thread": False},
-    )
-    for name, path in settings.DATABASE_PATHS.items()
-}
+ENGINE: Engine = create_engine(
+    settings.DATABASE_URL,
+    connect_args={"check_same_thread": False},
+)
+
+
+# Temporário para uso do SQLite com FK.
+# Ainda mais agora que não estamos mais usando o DB do schema.
+# Futuramente iremos explodir isso para colocar o Postgres
+@event.listens_for(Engine, "connect")
+def _enable_sqlite_foreign_keys(dbapi_connection: Any, _record: Any) -> None:
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 
 class DatabaseManager:
-    def __init__(self, engines: Mapping[str, Engine]):
-        self.engines = engines
+    def __init__(self, engine: Engine):
+        self.engine = engine
 
-    def session(self, db_name: str) -> Session:
-        return Session(self.engines[db_name])
+    def session(self) -> Session:
+        return Session(self.engine)
 
 
-db_manager = DatabaseManager(ENGINES)
+db_manager = DatabaseManager(ENGINE)
 
 
 def get_db_manager() -> DatabaseManager:
