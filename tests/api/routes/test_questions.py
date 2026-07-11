@@ -89,6 +89,8 @@ def test_level_questions_return_item_when_logged_in(
 	assert body["total"] == 1
 	assert len(body["items"]) == 1
 	assert body["items"][0]["id"] == question.id
+	assert body["items"][0]["uid"] == question.uid
+	assert body["items"][0]["level"] == "N5"
 	assert body["items"][0]["question_text"] == "Qual alternativa está correta?"
 	assert body["items"][0]["statement"]["question_command"] is not None
 	assert body["items"][0]["alternatives"]["correct_alternative"] == 1
