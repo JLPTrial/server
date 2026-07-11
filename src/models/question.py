@@ -52,7 +52,6 @@ class QuestionTags(SQLModel, table=True):
 
 
 class Tags(SQLModel, table=True):
-
     id: int | None = Field(default=None, primary_key=True)
 
     name: str = Field(nullable=False, unique=True)
@@ -64,7 +63,6 @@ class Tags(SQLModel, table=True):
 
 
 class Statement(SQLModel, table=True):
-
     id: int | None = Field(default=None, primary_key=True)
     question_command: str = Field(nullable=False, unique=True)
     questions: list["Questions"] = Relationship(back_populates="statement")
@@ -81,7 +79,6 @@ class ContextualTexts(SQLModel, table=True):
 
 
 class Alternatives(SQLModel, table=True):
-
     id: int | None = Field(default=None, primary_key=True)
 
     alternative_1: str = Field(nullable=False)
@@ -95,7 +92,6 @@ class Alternatives(SQLModel, table=True):
 
 
 class Media(SQLModel, table=True):
-
     id: int | None = Field(default=None, primary_key=True)
 
     contextual_text_id: int | None = Field(
@@ -111,7 +107,6 @@ class Media(SQLModel, table=True):
 
 
 class Questions(SQLModel, table=True):
-
     id: int | None = Field(default=None, primary_key=True)
 
     uid: str = Field(nullable=False, unique=True, index=True)

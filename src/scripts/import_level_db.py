@@ -46,7 +46,9 @@ def _import_statements(session: Session, source: sqlite3.Connection) -> dict[int
     ids: dict[int, int] = {}
     for row in source.execute("SELECT id, question_command FROM statement"):
         statement = session.exec(
-            select(Statement).where(Statement.question_command == row["question_command"])
+            select(Statement).where(
+                Statement.question_command == row["question_command"]
+            )
         ).first()
         if statement is None:
             statement = Statement(question_command=row["question_command"])
@@ -56,7 +58,9 @@ def _import_statements(session: Session, source: sqlite3.Connection) -> dict[int
     return ids
 
 
-def _import_contextual_texts(session: Session, source: sqlite3.Connection) -> dict[int, int]:
+def _import_contextual_texts(
+    session: Session, source: sqlite3.Connection
+) -> dict[int, int]:
     ids: dict[int, int] = {}
     for row in source.execute("SELECT id, contextual_text FROM contextual_texts"):
         text = session.exec(
@@ -84,7 +88,9 @@ def _import_tags(session: Session, source: sqlite3.Connection) -> dict[int, int]
     return ids
 
 
-def _import_alternatives(session: Session, question: Questions | None, row: sqlite3.Row) -> tuple[int, bool]:
+def _import_alternatives(
+    session: Session, question: Questions | None, row: sqlite3.Row
+) -> tuple[int, bool]:
     alternatives = None
     if question is not None:
         alternatives = session.get(Alternatives, question.alternative_id)
@@ -159,7 +165,6 @@ def _import_question_tags(
     question_id: int,
     tag_ids: dict[int, int],
 ) -> bool:
-    
     links = session.exec(
         select(QuestionTags).where(QuestionTags.question_id == question_id)
     ).all()
@@ -249,7 +254,12 @@ def import_level_db(source_db: Path, level: str) -> tuple[int, int, int]:
                 session, source, row["id"], _required_id(question.id), tag_ids
             )
 
-            if question_changed or alternatives_changed or media_changed or tags_changed:
+            if (
+                question_changed
+                or alternatives_changed
+                or media_changed
+                or tags_changed
+            ):
                 updated += 1
             else:
                 unchanged += 1
@@ -263,14 +273,16 @@ def import_level_db(source_db: Path, level: str) -> tuple[int, int, int]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source_db", type=Path)
-    parser.add_argument("level", choices=sorted(settings.AVAILABLE_QUESTION_LEVELS.values()))
+    parser.add_argument(
+        "level", choices=sorted(settings.AVAILABLE_QUESTION_LEVELS.values())
+    )
     args = parser.parse_args()
 
-    
     init_db()
 
-    
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s", force=True)
+    logging.basicConfig(
+        level=logging.INFO, format="%(levelname)s %(message)s", force=True
+    )
 
     inserted, updated, unchanged = import_level_db(args.source_db, args.level)
     logger.info(
