@@ -91,7 +91,7 @@ def test_import_prefixes_media_paths_with_level(db_engine, tmp_path: Path) -> No
 
 	# reimportar não duplica prefixo
 	import_level_db(source_db, "N5")
-	import_level_db(source_db, "N5") 
+	import_level_db(source_db, "N5")
 
 	with Session(db_engine) as session:
 		media = session.exec(select(Media)).one()

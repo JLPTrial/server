@@ -13,7 +13,8 @@ config = context.config
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
-assert config.config_file_name is not None
+if config.config_file_name is None:
+    raise RuntimeError("Alembic sem arquivo de configuração (alembic.ini)")
 fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 # add your model's MetaData object here
@@ -59,7 +60,8 @@ def run_migrations_online() -> None:
 
     """
     configuration = config.get_section(config.config_ini_section)
-    assert configuration is not None
+    if configuration is None:
+        raise RuntimeError("Seção [alembic] ausente no alembic.ini")
     configuration["sqlalchemy.url"] = get_url()
     connectable = engine_from_config(
         configuration,
