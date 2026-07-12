@@ -7,7 +7,7 @@ from src.models import Media, Questions, QuestionTags, Statement, Tags
 from src.scripts.import_level_db import import_level_db
 
 _SOURCE_SCHEMA = """
-CREATE TABLE statement (id INTEGER PRIMARY KEY, question_command TEXT NOT NULL UNIQUE);
+CREATE TABLE commands (id INTEGER PRIMARY KEY, question_command TEXT NOT NULL UNIQUE);
 CREATE TABLE contextual_texts (id INTEGER PRIMARY KEY, contextual_text TEXT NOT NULL UNIQUE);
 CREATE TABLE tags (id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE);
 CREATE TABLE alternatives (
@@ -29,7 +29,7 @@ CREATE TABLE questions (
 	uid TEXT NOT NULL UNIQUE,
 	alternative_id INTEGER NOT NULL UNIQUE,
 	media_id INTEGER UNIQUE,
-	statement_id INTEGER NOT NULL,
+	command_id INTEGER NOT NULL,
 	question_text TEXT NOT NULL,
 	question_type TEXT NOT NULL
 );
@@ -46,16 +46,16 @@ def _build_source_db(path: Path) -> None:
 	con.executescript(_SOURCE_SCHEMA)
 	con.executescript(
 		"""
-		INSERT INTO statement (id, question_command) VALUES (1, 'Escolha a correta');
+		INSERT INTO commands (id, question_command) VALUES (1, 'Escolha a correta');
 		INSERT INTO contextual_texts (id, contextual_text) VALUES (1, 'Texto de contexto');
 		INSERT INTO tags (id, name) VALUES (1, 'particula'), (2, 'audio');
 		INSERT INTO alternatives (id, alternative_1, alternative_2, alternative_3, alternative_4, correct_alternative)
 			VALUES (1, 'A', 'B', 'C', 'D', 1), (2, 'A', 'B', 'C', NULL, 2);
 		INSERT INTO media (id, contextual_text_id, image_file_path, audio_file_path)
 			VALUES (1, 1, NULL, 'listening/JT4Y/L1-Q1.mp3');
-		INSERT INTO questions (id, uid, alternative_id, media_id, statement_id, question_text, question_type)
+		INSERT INTO questions (id, uid, alternative_id, media_id, command_id, question_text, question_type)
 			VALUES (1, 'N5-grammar-0001', 1, NULL, 1, 'Pergunta 1', 'grammar');
-		INSERT INTO questions (id, uid, alternative_id, media_id, statement_id, question_text, question_type)
+		INSERT INTO questions (id, uid, alternative_id, media_id, command_id, question_text, question_type)
 			VALUES (2, 'N5-listening-0001', 2, 1, 1, 'Pergunta 2', 'listening');
 		INSERT INTO question_tags (question_id, tag_id) VALUES (1, 1), (2, 2);
 		"""
