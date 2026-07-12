@@ -1,16 +1,23 @@
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from src.api.utils.cookies import SESSION_COOKIE_NAME
 from src.core.config import settings
 from src.core.firebase.initialization import FirebaseIdentity
-from src.models import Alternatives, Questions, Statement, User
+from src.models import Alternatives, Questions, Statement, User, UserQuestion
+from src.models.question import QuestionStatus
 
 
 def _seed_question(
-	session: Session, *, question_text: str, question_type: str, level: str = "N5"
+	session: Session,
+	*,
+	question_text: str,
+	question_type: str,
+	level: str = "N5",
+	alternative_4: str | None = "D",
+	correct_alternative: int = 1,
 ) -> Questions:
 	question_command = f"Escolha a resposta correta {uuid4().hex}"
 	statement = Statement(question_command=question_command)
@@ -18,8 +25,8 @@ def _seed_question(
 		alternative_1="A",
 		alternative_2="B",
 		alternative_3="C",
-		alternative_4="D",
-		correct_alternative=1,
+		alternative_4=alternative_4,
+		correct_alternative=correct_alternative,
 	)
 	session.add(statement)
 	session.add(alternative)
@@ -39,6 +46,29 @@ def _seed_question(
 	session.commit()
 	session.refresh(question)
 	return question
+
+
+def _seed_user(session: Session, firebase_uid: str) -> User:
+	user = User(firebase_uid=firebase_uid)
+	session.add(user)
+	session.commit()
+	return user
+
+
+def _authenticate(client: TestClient, monkeypatch, firebase_uid: str) -> None:
+	monkeypatch.setattr(
+		"src.api.services.login.verify_firebase_session_cookie",
+		lambda session_cookie: FirebaseIdentity(
+			uid=firebase_uid,
+			email="user@jlptrial.com",
+			name="User",
+		),
+	)
+	monkeypatch.setattr(
+		"src.api.services.login._get_user_by_firebase_uid",
+		lambda session, firebase_uid: User(firebase_uid=firebase_uid),
+	)
+	client.cookies.set(SESSION_COOKIE_NAME, "firebase-session-cookie", path="/")
 
 
 def test_question_requires_login(client: TestClient, monkeypatch) -> None:
@@ -135,3 +165,146 @@ def test_questions_aggregate_multiple_levels(
 	body = response.json()
 	assert body["total"] == 2
 	assert {item["id"] for item in body["items"]} == question_ids
+
+
+def _register_answer(
+	client: TestClient, question_uid: str, selected_alternative: int
+):
+	return client.post(
+		"/questions/register",
+		json={
+			"question_uid": question_uid,
+			"selected_alternative": selected_alternative,
+		},
+	)
+
+
+def test_register_question_requires_login(client: TestClient, monkeypatch) -> None:
+	monkeypatch.setattr(settings, "SECURE_REQUEST", True)
+	response = _register_answer(client, "N5-test-unknown", 1)
+
+	assert response.status_code == 401
+	assert response.json()["detail"] == "Invalid Firebase session cookie"
+
+
+def test_register_question_stores_correct_answer(
+	client: TestClient, db_engine, monkeypatch
+) -> None:
+	monkeypatch.setattr(settings, "SECURE_REQUEST", True)
+
+	with Session(db_engine) as session:
+		_seed_user(session, "firebase-uid-abc")
+		question = _seed_question(
+			session,
+			question_text="Qual alternativa está correta?",
+			question_type="grammar",
+			correct_alternative=2,
+		)
+
+	_authenticate(client, monkeypatch, "firebase-uid-abc")
+	response = _register_answer(client, question.uid, 2)
+	client.cookies.clear()
+
+	assert response.status_code == 200
+	assert response.json() == {
+		"question_uid": question.uid,
+		"selected_alternative": 2,
+		"status": "correct",
+	}
+
+	with Session(db_engine) as session:
+		user_question = session.get(
+			UserQuestion, ("firebase-uid-abc", question.id)
+		)
+		assert user_question is not None
+		assert user_question.status == QuestionStatus.CORRECT
+		assert user_question.selected_alternative == 2
+
+
+def test_register_question_upserts_on_reanswer(
+	client: TestClient, db_engine, monkeypatch
+) -> None:
+	monkeypatch.setattr(settings, "SECURE_REQUEST", True)
+
+	with Session(db_engine) as session:
+		_seed_user(session, "firebase-uid-abc")
+		question = _seed_question(
+			session,
+			question_text="Qual alternativa está correta?",
+			question_type="grammar",
+			correct_alternative=1,
+		)
+
+	_authenticate(client, monkeypatch, "firebase-uid-abc")
+	first_response = _register_answer(client, question.uid, 3)
+	second_response = _register_answer(client, question.uid, 1)
+	client.cookies.clear()
+
+	assert first_response.status_code == 200
+	assert first_response.json()["status"] == "incorrect"
+	assert second_response.status_code == 200
+	assert second_response.json()["status"] == "correct"
+
+	with Session(db_engine) as session:
+		user_questions = session.exec(select(UserQuestion)).all()
+		assert len(user_questions) == 1
+		assert user_questions[0].status == QuestionStatus.CORRECT
+		assert user_questions[0].selected_alternative == 1
+
+
+def test_register_question_unknown_uid_returns_404(
+	client: TestClient, monkeypatch
+) -> None:
+	monkeypatch.setattr(settings, "SECURE_REQUEST", True)
+
+	_authenticate(client, monkeypatch, "firebase-uid-abc")
+	response = _register_answer(client, "N5-test-unknown", 1)
+	client.cookies.clear()
+
+	assert response.status_code == 404
+	assert response.json()["detail"] == "Question not found"
+
+
+def test_register_question_missing_fourth_alternative_returns_422(
+	client: TestClient, db_engine, monkeypatch
+) -> None:
+	monkeypatch.setattr(settings, "SECURE_REQUEST", True)
+
+	with Session(db_engine) as session:
+		_seed_user(session, "firebase-uid-abc")
+		question = _seed_question(
+			session,
+			question_text="Questão com três alternativas",
+			question_type="grammar",
+			alternative_4=None,
+		)
+
+	_authenticate(client, monkeypatch, "firebase-uid-abc")
+	response = _register_answer(client, question.uid, 4)
+	client.cookies.clear()
+
+	assert response.status_code == 422
+	assert response.json()["detail"] == "Invalid alternative for this question"
+
+	with Session(db_engine) as session:
+		assert session.exec(select(UserQuestion)).all() == []
+
+
+def test_register_question_out_of_range_alternative_returns_422(
+	client: TestClient, db_engine, monkeypatch
+) -> None:
+	monkeypatch.setattr(settings, "SECURE_REQUEST", True)
+
+	with Session(db_engine) as session:
+		_seed_user(session, "firebase-uid-abc")
+		question = _seed_question(
+			session,
+			question_text="Qual alternativa está correta?",
+			question_type="grammar",
+		)
+
+	_authenticate(client, monkeypatch, "firebase-uid-abc")
+	response = _register_answer(client, question.uid, 5)
+	client.cookies.clear()
+
+	assert response.status_code == 422
