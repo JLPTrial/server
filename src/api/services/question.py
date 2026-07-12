@@ -1,7 +1,7 @@
 from typing import cast
 
 from fastapi import HTTPException, status
-from sqlmodel import select
+from sqlmodel import col, func, select
 
 from ...database.session import DatabaseManagerDep
 from ...models.question import Questions, QuestionStatus, UserQuestion
@@ -100,6 +100,54 @@ def register_question(
         "selected_alternative": payload.selected_alternative,
         "status": answer_status.name.lower(),
     }
+
+
+def get_question_statistics(
+    db: DatabaseManagerDep,
+    current_user: User,
+    level_id: int | None = None,
+    topic: str | None = None,
+    tag: str | None = None,
+) -> dict[str, object]:
+    parameters: dict[str, int | str] = {}
+    if level_id is not None:
+        parameters["level_id"] = level_id
+    if topic is not None:
+        parameters["topic"] = topic
+
+    if not question_utils.validate_parameters(parameters):
+        return question_utils.wrap_statistics_output(total=0, correct=0, incorrect=0)
+
+    level = (
+        question_utils.get_level_name(level_id) if level_id is not None else None
+    )
+
+    with db.session() as session:
+        stmt = select(Questions.id)
+        stmt = question_utils.add_filter_level(stmt, level)
+        stmt = question_utils.add_filter_topic(stmt, topic)
+        stmt = question_utils.add_filter_tag(stmt, tag)
+
+        question_ids = stmt.distinct()
+
+        total = session.exec(
+            select(func.count()).select_from(question_ids.subquery())
+        ).one()
+
+        status_column = col(UserQuestion.status)
+        status_counts = session.exec(
+            select(status_column, func.count())
+            .where(UserQuestion.user_firebase_uid == current_user.firebase_uid)
+            .where(col(UserQuestion.question_id).in_(question_ids))
+            .group_by(status_column)
+        ).all()
+        counts = dict(status_counts)
+
+    return question_utils.wrap_statistics_output(
+        total=total,
+        correct=counts.get(QuestionStatus.CORRECT, 0),
+        incorrect=counts.get(QuestionStatus.INCORRECT, 0),
+    )
 
 
 def get_level_questions(

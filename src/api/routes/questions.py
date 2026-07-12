@@ -9,6 +9,7 @@ from ...models.question_response import (
     QuestionListResponse,
     QuestionRegisterRequest,
     QuestionRegisterResponse,
+    QuestionStatisticsResponse,
 )
 from ..services import question as question_services
 
@@ -53,6 +54,27 @@ def register_question(
         db=db,
         current_user=current_user,
         payload=payload,
+    )
+
+
+# User answer statistics for a group of questions.
+@router.get(
+    "/questions/statistics",
+    response_model=QuestionStatisticsResponse,
+)
+def read_question_statistics(
+    db: DatabaseManagerDep,
+    current_user: Annotated[User, Depends(get_current_user)],
+    level: int | None = None,
+    topic: str | None = None,
+    tag: str | None = None,
+) -> dict[str, object]:
+    return question_services.get_question_statistics(
+        db=db,
+        current_user=current_user,
+        level_id=level,
+        topic=topic,
+        tag=tag,
     )
 
 
