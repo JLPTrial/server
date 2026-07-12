@@ -10,8 +10,6 @@ from ...models import FirebaseLoginRequest, FirebaseSignupRequest, User
 
 INVALID_UID_TOKEN_MESSAGE = "Invalid uid token"  # nosec B105
 INVALID_SESSION_COOKIE_MESSAGE = "Invalid Firebase session cookie"  # nosec B105
-USER_NOT_REGISTERED_MESSAGE = "User is not registered"  # nosec B105
-USER_NOT_FOUND_MESSAGE = "User not found"  # nosec B105
 
 
 def signup_user(
@@ -22,12 +20,7 @@ def signup_user(
     except FirebaseTokenError as exc:
         raise ValueError(INVALID_UID_TOKEN_MESSAGE) from exc
 
-    with db.session() as session:
-        user = _get_user_by_firebase_uid(session, identity.uid)
-        if user is None:
-            session.add(User(firebase_uid=identity.uid))
-            session.commit()
-
+    _get_local_user(db, identity.uid)
     return identity
 
 
@@ -39,10 +32,7 @@ def login_user(
     except FirebaseTokenError as exc:
         raise ValueError(INVALID_UID_TOKEN_MESSAGE) from exc
 
-    with db.session() as session:
-        if _get_user_by_firebase_uid(session, identity.uid) is None:
-            raise LookupError(USER_NOT_REGISTERED_MESSAGE)
-
+    _get_local_user(db, identity.uid)
     return identity
 
 
@@ -54,16 +44,20 @@ def get_identity_from_session_cookie(
     except FirebaseTokenError as exc:
         raise ValueError(INVALID_SESSION_COOKIE_MESSAGE) from exc
 
-    with db.session() as session:
-        if _get_user_by_firebase_uid(session, identity.uid) is None:
-            raise LookupError(USER_NOT_FOUND_MESSAGE)
-
+    _get_local_user(db, identity.uid)
     return identity
 
 
 def get_user_from_session_cookie(db: DatabaseManagerDep, session_cookie: str) -> User:
     identity = get_identity_from_session_cookie(db, session_cookie)
     return User(firebase_uid=identity.uid)
+
+
+def _get_local_user(db: DatabaseManagerDep, firebase_uid: str) -> None:
+    with db.session() as session:
+        if _get_user_by_firebase_uid(session, firebase_uid) is None:
+            session.add(User(firebase_uid=firebase_uid))
+            session.commit()
 
 
 def _get_user_by_firebase_uid(session: Session, firebase_uid: str) -> User | None:

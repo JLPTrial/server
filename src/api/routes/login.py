@@ -58,8 +58,6 @@ def login(
         identity = login_user(db, credentials)
     except ValueError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
-    except LookupError as exc:
-        raise HTTPException(status_code=401, detail=str(exc)) from exc
 
     session_cookie = create_firebase_session_cookie(credentials.uid_token)
     set_session_cookie(response, session_cookie)
@@ -74,10 +72,7 @@ def login(
 
 @router.post(
     "/refresh",
-    responses={
-        401: {"description": "Invalid refresh token"},
-        404: {"description": "User not found"},
-    },
+    responses={401: {"description": "Invalid refresh token"}},
 )
 def refresh(request: Request, db: DatabaseManagerDep) -> Any:
     session_cookie = request.cookies.get(SESSION_COOKIE_NAME)
@@ -90,8 +85,6 @@ def refresh(request: Request, db: DatabaseManagerDep) -> Any:
         profile = get_firebase_user_profile(identity.uid)
     except ValueError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
-    except LookupError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
     return {
         "user": {
