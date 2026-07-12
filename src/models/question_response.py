@@ -29,6 +29,8 @@ class QuestionMediaResponse(SQLModel):
 
 class QuestionResponse(SQLModel):
     id: int
+    uid: str
+    level: str
     question_type: str
     question_text: str
     statement: QuestionStatementResponse

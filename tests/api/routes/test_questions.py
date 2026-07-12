@@ -9,7 +9,9 @@ from src.core.firebase.initialization import FirebaseIdentity
 from src.models import Alternatives, Questions, Statement, User
 
 
-def _seed_question(session: Session, *, question_text: str, question_type: str) -> Questions:
+def _seed_question(
+	session: Session, *, question_text: str, question_type: str, level: str = "N5"
+) -> Questions:
 	question_command = f"Escolha a resposta correta {uuid4().hex}"
 	statement = Statement(question_command=question_command)
 	alternative = Alternatives(
@@ -26,6 +28,8 @@ def _seed_question(session: Session, *, question_text: str, question_type: str) 
 	session.refresh(alternative)
 
 	question = Questions(
+		uid=f"{level}-test-{uuid4().hex}",
+		level=level,
 		alternative_id=alternative.id,
 		statement_id=statement.id,
 		question_text=question_text,
@@ -46,11 +50,11 @@ def test_question_requires_login(client: TestClient, monkeypatch) -> None:
 
 
 def test_level_questions_return_item_when_logged_in(
-	client: TestClient, db_engines, monkeypatch
+	client: TestClient, db_engine, monkeypatch
 ) -> None:
 	monkeypatch.setattr(settings, "SECURE_REQUEST", True)
 
-	with Session(db_engines["N5"]) as session:
+	with Session(db_engine) as session:
 		question = _seed_question(
 			session,
 			question_text="Qual alternativa está correta?",
@@ -67,11 +71,7 @@ def test_level_questions_return_item_when_logged_in(
 	)
 	monkeypatch.setattr(
 		"src.api.services.login._get_user_by_firebase_uid",
-		lambda session, firebase_uid: User(
-			firebase_uid=firebase_uid,
-			email="user@jlptrial.com",
-			name="User",
-		),
+		lambda session, firebase_uid: User(firebase_uid=firebase_uid),
 	)
 
 	client.cookies.set(SESSION_COOKIE_NAME, "firebase-session-cookie", path="/")
@@ -85,6 +85,8 @@ def test_level_questions_return_item_when_logged_in(
 	assert body["total"] == 1
 	assert len(body["items"]) == 1
 	assert body["items"][0]["id"] == question.id
+	assert body["items"][0]["uid"] == question.uid
+	assert body["items"][0]["level"] == "N5"
 	assert body["items"][0]["question_text"] == "Qual alternativa está correta?"
 	assert body["items"][0]["statement"]["question_command"] is not None
 	assert body["items"][0]["alternatives"]["correct_alternative"] == 1
@@ -92,24 +94,25 @@ def test_level_questions_return_item_when_logged_in(
 	assert body["items"][0]["tags"] == []
 
 
-def test_questions_aggregate_multiple_databases(
-	client: TestClient, db_engines, monkeypatch
+def test_questions_aggregate_multiple_levels(
+	client: TestClient, db_engine, monkeypatch
 ) -> None:
 	monkeypatch.setattr(settings, "SECURE_REQUEST", True)
 
-	with Session(db_engines["N4"]) as n4_session:
+	with Session(db_engine) as session:
 		question_n4 = _seed_question(
-			n4_session,
+			session,
 			question_text="Pergunta do N4",
 			question_type="vocabulary",
+			level="N4",
 		)
-
-	with Session(db_engines["N5"]) as n5_session:
 		question_n5 = _seed_question(
-			n5_session,
+			session,
 			question_text="Pergunta do N5",
 			question_type="grammar",
+			level="N5",
 		)
+		question_ids = {question_n4.id, question_n5.id}
 
 	monkeypatch.setattr(
 		"src.api.services.login.verify_firebase_session_cookie",
@@ -121,11 +124,7 @@ def test_questions_aggregate_multiple_databases(
 	)
 	monkeypatch.setattr(
 		"src.api.services.login._get_user_by_firebase_uid",
-		lambda session, firebase_uid: User(
-			firebase_uid=firebase_uid,
-			email="user@jlptrial.com",
-			name="User",
-		),
+		lambda session, firebase_uid: User(firebase_uid=firebase_uid),
 	)
 
 	client.cookies.set(SESSION_COOKIE_NAME, "firebase-session-cookie", path="/")
@@ -135,4 +134,4 @@ def test_questions_aggregate_multiple_databases(
 	assert response.status_code == 200
 	body = response.json()
 	assert body["total"] == 2
-	assert {item["id"] for item in body["items"]} == {question_n4.id, question_n5.id}
+	assert {item["id"] for item in body["items"]} == question_ids

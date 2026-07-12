@@ -20,12 +20,12 @@ def wrap_output(
 
 
 # Settings getters
-def get_available_question_databases_ids() -> list[str]:
-    return list(settings.AVAILABLE_QUESTION_DATABASES.values())
+def get_available_levels() -> list[str]:
+    return list(settings.AVAILABLE_QUESTION_LEVELS.values())
 
 
-def get_question_database_title(database_id: int) -> str:
-    return settings.AVAILABLE_QUESTION_DATABASES[database_id]
+def get_level_name(level_id: int) -> str:
+    return settings.AVAILABLE_QUESTION_LEVELS[level_id]
 
 
 # Validations
@@ -45,7 +45,7 @@ def validate_answer_status_parameter(answer_status: str | None) -> bool:
 
 
 def validate_question_level_id(level_id: int | None) -> bool:
-    return level_id in settings.AVAILABLE_QUESTION_DATABASES
+    return level_id in settings.AVAILABLE_QUESTION_LEVELS
 
 
 def validate_question_topic(topic: str | None) -> bool:
@@ -53,6 +53,12 @@ def validate_question_topic(topic: str | None) -> bool:
 
 
 # Filters
+def add_filter_level(stmt: Any, level: str | None) -> Any:
+    if level:
+        return stmt.where(Questions.level == level)
+    return stmt
+
+
 def add_filter_question_id(stmt: Any, question_id: int | None) -> Any:
     if question_id:
         return stmt.where(Questions.id == question_id)

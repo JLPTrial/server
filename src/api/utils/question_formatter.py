@@ -22,6 +22,8 @@ def format_question(question: Questions) -> dict[str, object]:
 
     return {
         "id": question.id,
+        "uid": question.uid,
+        "level": question.level,
         "question_type": question.question_type,
         "question_text": question.question_text,
         "statement": {

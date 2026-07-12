@@ -40,33 +40,37 @@ def test_firebase_signup_creates_local_user(client: TestClient, db, monkeypatch)
 	assert response.cookies.get(SESSION_COOKIE_NAME) == "firebase-session-cookie"
 
 	stored_user = db.exec(
-		select(User).where(User.email == "fulano@jlptrial.com")
+		select(User).where(User.firebase_uid == "firebase-uid-123")
 	).first()
 	assert stored_user is not None
-	assert stored_user.name == "Fulano"
-	assert stored_user.firebase_uid == "firebase-uid-123"
 
 
-def test_firebase_login_requires_registered_user(client: TestClient, monkeypatch) -> None:
+def test_firebase_login_auto_registers_unknown_user(
+	client: TestClient, db, monkeypatch
+) -> None:
 	monkeypatch.setattr(
 		"src.api.services.login.verify_firebase_id_token",
 		lambda uid_token: _firebase_identity("firebase-uid-456", "missing@jlptrial.com", "Missing"),
 	)
+	monkeypatch.setattr(
+		login_routes,
+		"create_firebase_session_cookie",
+		lambda uid_token: "firebase-session-cookie",
+	)
 
 	response = client.post("/users/login", json={"uid_token": "firebase-id-token"})
 
-	assert response.status_code == 401
-	assert response.json()["detail"] == "User is not registered"
+	assert response.status_code == 200
+	assert response.json()["user"]["firebase_uid"] == "firebase-uid-456"
+
+	stored_user = db.exec(
+		select(User).where(User.firebase_uid == "firebase-uid-456")
+	).first()
+	assert stored_user is not None
 
 
 def test_firebase_login_sets_session_cookie(client: TestClient, db, monkeypatch) -> None:
-	db.add(
-		User(
-			firebase_uid="firebase-uid-789",
-			email="active@jlptrial.com",
-			name="Active User",
-		)
-	)
+	db.add(User(firebase_uid="firebase-uid-789"))
 	db.commit()
 
 	monkeypatch.setattr(
@@ -93,18 +97,14 @@ def test_firebase_login_sets_session_cookie(client: TestClient, db, monkeypatch)
 
 
 def test_firebase_refresh_reads_session_cookie(client: TestClient, db, monkeypatch) -> None:
-	db.add(
-		User(
-			firebase_uid="firebase-uid-111",
-			email="refresh@jlptrial.com",
-			name="Refresh User",
-		)
-	)
-	db.commit()
-
 	monkeypatch.setattr(
 		"src.api.services.login.verify_firebase_session_cookie",
 		lambda session_cookie: _firebase_identity("firebase-uid-111", "refresh@jlptrial.com", "Refresh User"),
+	)
+	monkeypatch.setattr(
+		login_routes,
+		"get_firebase_user_profile",
+		lambda uid: _firebase_identity(uid, "refresh@jlptrial.com", "Refresh User"),
 	)
 
 	client.cookies.set(SESSION_COOKIE_NAME, "firebase-session-cookie", path="/")
@@ -119,6 +119,11 @@ def test_firebase_refresh_reads_session_cookie(client: TestClient, db, monkeypat
 			"name": "Refresh User",
 		},
 	}
+
+	stored_user = db.exec(
+		select(User).where(User.firebase_uid == "firebase-uid-111")
+	).first()
+	assert stored_user is not None
 
 
 def test_firebase_logout_clears_session_cookie(client: TestClient, monkeypatch) -> None:

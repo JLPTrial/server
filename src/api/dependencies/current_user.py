@@ -22,12 +22,12 @@ def get_current_user(request: Request, db: DatabaseManagerDep) -> User:
 
 def get_dummy_user(db: DatabaseManagerDep) -> User:
     dev_uid = "__dev__"
-    with db.session("users") as session:
+    with db.session() as session:
         user = session.exec(select(User).where(User.firebase_uid == dev_uid)).first()
         if user:
             return user
 
-        test_user = User(firebase_uid=dev_uid, email="dev@example.com", name="Dev User")
+        test_user = User(firebase_uid=dev_uid)
         session.add(test_user)
         session.commit()
         session.refresh(test_user)
