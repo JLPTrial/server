@@ -5,7 +5,11 @@ from fastapi import APIRouter, Depends
 from ...api.dependencies.current_user import get_current_user
 from ...database.session import DatabaseManagerDep
 from ...models import User
-from ...models.question_response import QuestionListResponse
+from ...models.question_response import (
+    QuestionListResponse,
+    QuestionRegisterRequest,
+    QuestionRegisterResponse,
+)
 from ..services import question as question_services
 
 router = APIRouter(tags=["questions"])
@@ -32,6 +36,23 @@ def read_questions(
         answer_status=answer_status,
         page=page,
         limit=limit,
+    )
+
+
+# Registers the answer given by the user to a question
+@router.post(
+    "/questions/register",
+    response_model=QuestionRegisterResponse,
+)
+def register_question(
+    db: DatabaseManagerDep,
+    current_user: Annotated[User, Depends(get_current_user)],
+    payload: QuestionRegisterRequest,
+) -> dict[str, object]:
+    return question_services.register_question(
+        db=db,
+        current_user=current_user,
+        payload=payload,
     )
 
 
