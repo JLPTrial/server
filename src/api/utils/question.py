@@ -19,6 +19,15 @@ def wrap_output(
     }
 
 
+def wrap_statistics_output(*, total: int, correct: int, incorrect: int) -> dict[str, object]:
+    return {
+        "total": total,
+        "answered": correct + incorrect,
+        "correct": correct,
+        "incorrect": incorrect,
+    }
+
+
 # Settings getters
 def get_available_levels() -> list[str]:
     return list(settings.AVAILABLE_QUESTION_LEVELS.values())
