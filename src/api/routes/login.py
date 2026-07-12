@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from ...core.firebase.initialization import FirebaseTokenError
 from ...core.firebase.operations import (
     create_firebase_session_cookie,
+    get_firebase_user_profile,
     revoke_firebase_sessions,
     verify_firebase_session_cookie,
 )
@@ -15,7 +16,7 @@ from ...models import (
 )
 from ..services.login import (
     INVALID_SESSION_COOKIE_MESSAGE,
-    get_user_from_session_cookie,
+    get_identity_from_session_cookie,
     login_user,
     signup_user,
 )
@@ -35,14 +36,16 @@ router = APIRouter(prefix="/users", tags=["login"])
 def signup(
     response: Response, db: DatabaseManagerDep, credentials: FirebaseSignupRequest
 ) -> Any:
-    user = signup_user(db, credentials)
+    identity = signup_user(db, credentials)
     session_cookie = create_firebase_session_cookie(credentials.uid_token)
     set_session_cookie(response, session_cookie)
+
+    name = credentials.name.strip() or identity.name or identity.email.split("@")[0]
     return {
         "user": {
-            "firebase_uid": user.firebase_uid,
-            "email": user.email,
-            "name": user.name,
+            "firebase_uid": identity.uid,
+            "email": identity.email,
+            "name": name,
         },
     }
 
@@ -52,7 +55,7 @@ def login(
     response: Response, db: DatabaseManagerDep, credentials: FirebaseLoginRequest
 ) -> Any:
     try:
-        user = login_user(db, credentials)
+        identity = login_user(db, credentials)
     except ValueError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
     except LookupError as exc:
@@ -62,9 +65,9 @@ def login(
     set_session_cookie(response, session_cookie)
     return {
         "user": {
-            "firebase_uid": user.firebase_uid,
-            "email": user.email,
-            "name": user.name,
+            "firebase_uid": identity.uid,
+            "email": identity.email,
+            "name": identity.name,
         },
     }
 
@@ -82,7 +85,9 @@ def refresh(request: Request, db: DatabaseManagerDep) -> Any:
         raise HTTPException(status_code=401, detail=INVALID_SESSION_COOKIE_MESSAGE)
 
     try:
-        user = get_user_from_session_cookie(db, session_cookie)
+        identity = get_identity_from_session_cookie(db, session_cookie)
+
+        profile = get_firebase_user_profile(identity.uid)
     except ValueError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
     except LookupError as exc:
@@ -90,9 +95,9 @@ def refresh(request: Request, db: DatabaseManagerDep) -> Any:
 
     return {
         "user": {
-            "firebase_uid": user.firebase_uid,
-            "email": user.email,
-            "name": user.name,
+            "firebase_uid": profile.uid,
+            "email": profile.email,
+            "name": profile.name,
         },
     }
 

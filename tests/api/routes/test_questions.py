@@ -71,11 +71,7 @@ def test_level_questions_return_item_when_logged_in(
 	)
 	monkeypatch.setattr(
 		"src.api.services.login._get_user_by_firebase_uid",
-		lambda session, firebase_uid: User(
-			firebase_uid=firebase_uid,
-			email="user@jlptrial.com",
-			name="User",
-		),
+		lambda session, firebase_uid: User(firebase_uid=firebase_uid),
 	)
 
 	client.cookies.set(SESSION_COOKIE_NAME, "firebase-session-cookie", path="/")
@@ -128,11 +124,7 @@ def test_questions_aggregate_multiple_levels(
 	)
 	monkeypatch.setattr(
 		"src.api.services.login._get_user_by_firebase_uid",
-		lambda session, firebase_uid: User(
-			firebase_uid=firebase_uid,
-			email="user@jlptrial.com",
-			name="User",
-		),
+		lambda session, firebase_uid: User(firebase_uid=firebase_uid),
 	)
 
 	client.cookies.set(SESSION_COOKIE_NAME, "firebase-session-cookie", path="/")

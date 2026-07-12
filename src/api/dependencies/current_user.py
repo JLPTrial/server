@@ -27,7 +27,7 @@ def get_dummy_user(db: DatabaseManagerDep) -> User:
         if user:
             return user
 
-        test_user = User(firebase_uid=dev_uid, email="dev@example.com", name="Dev User")
+        test_user = User(firebase_uid=dev_uid)
         session.add(test_user)
         session.commit()
         session.refresh(test_user)
