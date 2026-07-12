@@ -54,4 +54,11 @@ class QuestionRegisterRequest(SQLModel):
 class QuestionRegisterResponse(SQLModel):
     question_uid: str
     selected_alternative: int
-    status: str 
+    status: str
+
+
+class QuestionStatisticsResponse(SQLModel):
+    total: int
+    answered: int
+    correct: int
+    incorrect: int
