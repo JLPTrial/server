@@ -44,7 +44,7 @@ def _set_fields(obj: object, **fields: object) -> bool:
 
 def _import_statements(session: Session, source: sqlite3.Connection) -> dict[int, int]:
     ids: dict[int, int] = {}
-    for row in source.execute("SELECT id, question_command FROM statement"):
+    for row in source.execute("SELECT id, question_command FROM commands"):
         statement = session.exec(
             select(Statement).where(
                 Statement.question_command == row["question_command"]
@@ -229,7 +229,7 @@ def import_level_db(source_db: Path, level: str) -> tuple[int, int, int]:
                     level=level,
                     alternative_id=alternative_id,
                     media_id=media_id,
-                    statement_id=statement_ids[row["statement_id"]],
+                    statement_id=statement_ids[row["command_id"]],
                     question_text=row["question_text"],
                     question_type=row["question_type"],
                 )
@@ -246,7 +246,7 @@ def import_level_db(source_db: Path, level: str) -> tuple[int, int, int]:
                 level=level,
                 alternative_id=alternative_id,
                 media_id=media_id,
-                statement_id=statement_ids[row["statement_id"]],
+                statement_id=statement_ids[row["command_id"]],
                 question_text=row["question_text"],
                 question_type=row["question_type"],
             )

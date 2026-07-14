@@ -1,4 +1,6 @@
-from typing import Any, cast
+from typing import Any
+
+from sqlmodel import col
 
 from ...core.config import settings
 from ...models.question import Questions, QuestionStatus, Tags, UserQuestion
@@ -16,6 +18,17 @@ def wrap_output(
         "limit": limit,
         "total": len(questions),
         "items": questions[start:end] if questions else [],
+    }
+
+
+def wrap_statistics_output(
+    *, total: int, correct: int, incorrect: int
+) -> dict[str, object]:
+    return {
+        "total": total,
+        "answered": correct + incorrect,
+        "correct": correct,
+        "incorrect": incorrect,
     }
 
 
@@ -73,8 +86,7 @@ def add_filter_topic(stmt: Any, topic: str | None) -> Any:
 
 def add_filter_tag(stmt: Any, tag: str | None) -> Any:
     if tag:
-        # Eu realmente não gosto de usar cast, mas aparentemente, o mypy sofre sem ele...
-        return stmt.join(Questions.tags).where(cast(Any, Tags.name).ilike(f"%{tag}%"))
+        return stmt.join(Questions.tags).where(col(Tags.name).ilike(f"%{tag}%"))
     return stmt
 
 
@@ -91,8 +103,8 @@ def add_filter_answer_status(
 
     if answer_status == "unanswered":
         return stmt.where(
-            ~cast(Any, Questions.users_link).any(
-                UserQuestion.user_firebase_uid == user_firebase_uid
+            ~col(Questions.users_link).any(
+                col(UserQuestion.user_firebase_uid) == user_firebase_uid
             )
         )
 
