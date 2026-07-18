@@ -1,24 +1,19 @@
 from sqlmodel import Session, select
 
-from ...core.firebase.initialization import FirebaseIdentity, FirebaseTokenError
-from ...core.firebase.operations import (
-    verify_firebase_id_token,
-    verify_firebase_session_cookie,
+from ...core.firebase.authentication import (
+    resolve_login_identity,
+    resolve_session_identity,
+    resolve_signup_identity,
 )
+from ...core.firebase.initialization import FirebaseIdentity
 from ...database.session import DatabaseManagerDep
 from ...models import FirebaseLoginRequest, FirebaseSignupRequest, User
-
-INVALID_UID_TOKEN_MESSAGE = "Invalid uid token"  # nosec B105
-INVALID_SESSION_COOKIE_MESSAGE = "Invalid Firebase session cookie"  # nosec B105
 
 
 def signup_user(
     db: DatabaseManagerDep, credentials: FirebaseSignupRequest
 ) -> FirebaseIdentity:
-    try:
-        identity = verify_firebase_id_token(credentials.uid_token)
-    except FirebaseTokenError as exc:
-        raise ValueError(INVALID_UID_TOKEN_MESSAGE) from exc
+    identity = resolve_signup_identity(credentials)
 
     _get_local_user(db, identity.uid)
     return identity
@@ -27,10 +22,7 @@ def signup_user(
 def login_user(
     db: DatabaseManagerDep, credentials: FirebaseLoginRequest
 ) -> FirebaseIdentity:
-    try:
-        identity = verify_firebase_id_token(credentials.uid_token)
-    except FirebaseTokenError as exc:
-        raise ValueError(INVALID_UID_TOKEN_MESSAGE) from exc
+    identity = resolve_login_identity(credentials)
 
     _get_local_user(db, identity.uid)
     return identity
@@ -39,10 +31,7 @@ def login_user(
 def get_identity_from_session_cookie(
     db: DatabaseManagerDep, session_cookie: str
 ) -> FirebaseIdentity:
-    try:
-        identity = verify_firebase_session_cookie(session_cookie)
-    except FirebaseTokenError as exc:
-        raise ValueError(INVALID_SESSION_COOKIE_MESSAGE) from exc
+    identity = resolve_session_identity(session_cookie)
 
     _get_local_user(db, identity.uid)
     return identity

@@ -3,6 +3,7 @@ from sqlmodel import select
 
 from ...api.services.login import get_user_from_session_cookie
 from ...core.config import settings
+from ...core.firebase.authentication import DEV_FIREBASE_UID
 from ...core.firebase.constants import INVALID_SESSION_COOKIE_MESSAGE
 from ...database.session import DatabaseManagerDep
 from ...models import User
@@ -21,13 +22,14 @@ def get_current_user(request: Request, db: DatabaseManagerDep) -> User:
 
 
 def get_dummy_user(db: DatabaseManagerDep) -> User:
-    dev_uid = "__dev__"
     with db.session() as session:
-        user = session.exec(select(User).where(User.firebase_uid == dev_uid)).first()
+        user = session.exec(
+            select(User).where(User.firebase_uid == DEV_FIREBASE_UID)
+        ).first()
         if user:
             return user
 
-        test_user = User(firebase_uid=dev_uid)
+        test_user = User(firebase_uid=DEV_FIREBASE_UID)
         session.add(test_user)
         session.commit()
         session.refresh(test_user)
