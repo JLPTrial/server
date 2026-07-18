@@ -64,16 +64,8 @@ def _seed_user(session: Session, firebase_uid: str) -> User:
 
 def _authenticate(client: TestClient, monkeypatch, firebase_uid: str) -> None:
 	monkeypatch.setattr(
-		"src.api.services.login.verify_firebase_session_cookie",
-		lambda session_cookie: FirebaseIdentity(
-			uid=firebase_uid,
-			email="user@jlptrial.com",
-			name="User",
-		),
-	)
-	monkeypatch.setattr(
-		"src.api.services.login._get_user_by_firebase_uid",
-		lambda session, firebase_uid: User(firebase_uid=firebase_uid),
+		"src.api.dependencies.current_user.get_user_from_session_cookie",
+		lambda db, session_cookie: User(firebase_uid=firebase_uid),
 	)
 	client.cookies.set(SESSION_COOKIE_NAME, "firebase-session-cookie", path="/")
 
@@ -99,16 +91,8 @@ def test_level_questions_return_item_when_logged_in(
 		)
 
 	monkeypatch.setattr(
-		"src.api.services.login.verify_firebase_session_cookie",
-		lambda session_cookie: FirebaseIdentity(
-			uid="firebase-uid-abc",
-			email="user@jlptrial.com",
-			name="User",
-		),
-	)
-	monkeypatch.setattr(
-		"src.api.services.login._get_user_by_firebase_uid",
-		lambda session, firebase_uid: User(firebase_uid=firebase_uid),
+		"src.api.dependencies.current_user.get_user_from_session_cookie",
+		lambda db, session_cookie: User(firebase_uid="firebase-uid-abc"),
 	)
 
 	client.cookies.set(SESSION_COOKIE_NAME, "firebase-session-cookie", path="/")
@@ -152,16 +136,8 @@ def test_questions_aggregate_multiple_levels(
 		question_ids = {question_n4.id, question_n5.id}
 
 	monkeypatch.setattr(
-		"src.api.services.login.verify_firebase_session_cookie",
-		lambda session_cookie: FirebaseIdentity(
-			uid="firebase-uid-abc",
-			email="user@jlptrial.com",
-			name="User",
-		),
-	)
-	monkeypatch.setattr(
-		"src.api.services.login._get_user_by_firebase_uid",
-		lambda session, firebase_uid: User(firebase_uid=firebase_uid),
+		"src.api.dependencies.current_user.get_user_from_session_cookie",
+		lambda db, session_cookie: User(firebase_uid="firebase-uid-abc"),
 	)
 
 	client.cookies.set(SESSION_COOKIE_NAME, "firebase-session-cookie", path="/")
