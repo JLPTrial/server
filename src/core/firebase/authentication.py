@@ -1,5 +1,5 @@
-from ..config import settings
 from ...models import FirebaseLoginRequest, FirebaseSignupRequest
+from ..config import settings
 from .initialization import FirebaseIdentity, FirebaseTokenError
 from .operations import (
     create_firebase_session_cookie,
