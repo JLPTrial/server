@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Optional
+from datetime import datetime
 
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -25,6 +26,11 @@ class UserQuestion(SQLModel, table=True):
 
     question_id: int | None = Field(
         default=None, foreign_key="questions.id", primary_key=True
+    )
+
+    date: datetime = Field(
+        default_factory=datetime.utcnow,
+        index=True,
     )
 
     status: QuestionStatus | None = Field(default=None)

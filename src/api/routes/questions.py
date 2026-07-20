@@ -11,6 +11,7 @@ from ...models.question_response import (
     QuestionRegisterResponse,
     QuestionStatisticsResponse,
 )
+from ...models.statistic_response import StatisticResponse
 from ..services import question as question_services
 
 router = APIRouter(tags=["questions"])
@@ -127,4 +128,22 @@ def read_level_topic_questions(
         answer_status=answer_status,
         page=page,
         limit=limit,
+    )
+
+
+
+# Statistics
+@router.get(
+    "/statistics",
+    response_model=StatisticResponse,
+)
+def read_statistics(
+    db: DatabaseManagerDep,
+    current_user: Annotated[User, Depends(get_current_user)],
+    period: str = "all",  # "all", "day", "week", "month", "year"
+) -> dict[str, object]:
+    return question_services.statistics(
+        db=db,
+        current_user=current_user,
+        period=period
     )
