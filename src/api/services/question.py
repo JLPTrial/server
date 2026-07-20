@@ -117,7 +117,7 @@ def get_question_statistics(
         parameters["topic"] = topic
 
     if not question_utils.validate_parameters(parameters):
-        return question_utils.wrap_statistics_output(total=0, correct=0, incorrect=0)
+        return question_utils.wrap_statistics_output_old(total=0, correct=0, incorrect=0)
 
     level = question_utils.get_level_name(level_id) if level_id is not None else None
 
