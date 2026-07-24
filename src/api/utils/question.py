@@ -1,12 +1,10 @@
+from datetime import datetime, timedelta
 from typing import Any
 
 from sqlmodel import col
 
 from ...core.config import settings
-from ...models.question import Questions, QuestionStatus, Tags, UserQuestion
-from datetime import UTC, datetime, timedelta
-
-
+from ...models.question import AnswerStatus, Questions, Tags, UserQuestion
 
 
 # Output formatter
@@ -22,18 +20,6 @@ def wrap_output(
         "total": len(questions),
         "items": questions[start:end] if questions else [],
     }
-
-
-def wrap_statistics_output_old(
-    *, total: int, correct: int, incorrect: int
-) -> dict[str, object]:
-    return {
-        "total": total,
-        "answered": correct + incorrect,
-        "correct": correct,
-        "incorrect": incorrect,
-    }
-
 
 def wrap_statistics_output(
         **kwargs: dict[str, object]
@@ -137,15 +123,15 @@ def add_filter_answer_status(
     if answer_status == "correct":
         return stmt.join(Questions.users_link).where(
             (UserQuestion.user_firebase_uid == user_firebase_uid)
-            & (UserQuestion.status == QuestionStatus.CORRECT)
+            & (UserQuestion.status == AnswerStatus.CORRECT)
         )
 
     if answer_status == "incorrect":
         return stmt.join(Questions.users_link).where(
             (UserQuestion.user_firebase_uid == user_firebase_uid)
-            & (UserQuestion.status == QuestionStatus.INCORRECT)
+            & (UserQuestion.status == AnswerStatus.INCORRECT)
         )
-    
+
 
 
 

@@ -139,7 +139,7 @@ def upgrade() -> None:
         sa.Column("question_id", sa.Integer(), nullable=False),
         sa.Column(
             "status",
-            sa.Enum("CORRECT", "INCORRECT", name="questionstatus"),
+            sa.Enum("CORRECT", "INCORRECT", name="AnswerStatus"),
             nullable=True,
         ),
         sa.Column("selected_alternative", sa.Integer(), nullable=True),

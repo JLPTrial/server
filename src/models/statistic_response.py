@@ -1,6 +1,7 @@
-from sqlmodel import Field, SQLModel
+from sqlmodel import SQLModel
 
-class StatisticResponse(SQLModel):
+
+class StatisticsResponse(SQLModel):
     summary: dict[str, int]
     skills: list[dict[str, int | str]]
     skillTags: dict[str, list[dict[str, int | str]]]

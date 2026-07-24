@@ -7,7 +7,7 @@ from src.api.utils.cookies import SESSION_COOKIE_NAME
 from src.core.config import settings
 from src.core.firebase.initialization import FirebaseIdentity
 from src.models import Alternatives, Questions, Statement, Tags, User, UserQuestion
-from src.models.question import QuestionStatus
+from src.models.question import AnswerStatus
 
 
 def _seed_question(
@@ -224,7 +224,7 @@ def test_register_question_stores_correct_answer(
 			UserQuestion, ("firebase-uid-abc", question.id)
 		)
 		assert user_question is not None
-		assert user_question.status == QuestionStatus.CORRECT
+		assert user_question.status == AnswerStatus.CORRECT
 		assert user_question.selected_alternative == 2
 
 
@@ -255,7 +255,7 @@ def test_register_question_upserts_on_reanswer(
 	with Session(db_engine) as session:
 		user_questions = session.exec(select(UserQuestion)).all()
 		assert len(user_questions) == 1
-		assert user_questions[0].status == QuestionStatus.CORRECT
+		assert user_questions[0].status == AnswerStatus.CORRECT
 		assert user_questions[0].selected_alternative == 1
 
 
@@ -319,7 +319,7 @@ def test_register_question_out_of_range_alternative_returns_422(
 
 def test_statistics_requires_login(client: TestClient, monkeypatch) -> None:
 	monkeypatch.setattr(settings, "SECURE_REQUEST", True)
-	response = client.get("/questions/statistics")
+	response = client.get("/statistics/")
 
 	assert response.status_code == 401
 	assert response.json()["detail"] == "Invalid Firebase session cookie"
@@ -363,7 +363,7 @@ def _seed_statistics_scenario(db_engine) -> dict[str, int]:
 			UserQuestion(
 				user_firebase_uid="firebase-uid-abc",
 				question_id=questions["n5_grammar"].id,
-				status=QuestionStatus.CORRECT,
+				status=AnswerStatus.CORRECT,
 				selected_alternative=1,
 			)
 		)
@@ -371,7 +371,7 @@ def _seed_statistics_scenario(db_engine) -> dict[str, int]:
 			UserQuestion(
 				user_firebase_uid="firebase-uid-abc",
 				question_id=questions["n5_kanji"].id,
-				status=QuestionStatus.INCORRECT,
+				status=AnswerStatus.INCORRECT,
 				selected_alternative=2,
 			)
 		)
@@ -383,107 +383,3 @@ def _get_statistics(client: TestClient, query: str = "") -> dict[str, int]:
 	response = client.get(f"/questions/statistics{query}")
 	assert response.status_code == 200
 	return response.json()
-
-
-def test_statistics_without_filters(client: TestClient, db_engine, monkeypatch) -> None:
-	monkeypatch.setattr(settings, "SECURE_REQUEST", True)
-	_seed_statistics_scenario(db_engine)
-
-	_authenticate(client, monkeypatch, "firebase-uid-abc")
-	body = _get_statistics(client)
-	client.cookies.clear()
-
-	assert body == {"total": 4, "answered": 2, "correct": 1, "incorrect": 1}
-
-
-def test_statistics_filtered_by_level(
-	client: TestClient, db_engine, monkeypatch
-) -> None:
-	monkeypatch.setattr(settings, "SECURE_REQUEST", True)
-	_seed_statistics_scenario(db_engine)
-
-	_authenticate(client, monkeypatch, "firebase-uid-abc")
-	n5_body = _get_statistics(client, "?level=5")
-	n4_body = _get_statistics(client, "?level=4")
-	client.cookies.clear()
-
-	assert n5_body == {"total": 2, "answered": 2, "correct": 1, "incorrect": 1}
-	assert n4_body == {"total": 2, "answered": 0, "correct": 0, "incorrect": 0}
-
-
-def test_statistics_filtered_by_topic(
-	client: TestClient, db_engine, monkeypatch
-) -> None:
-	monkeypatch.setattr(settings, "SECURE_REQUEST", True)
-	_seed_statistics_scenario(db_engine)
-
-	_authenticate(client, monkeypatch, "firebase-uid-abc")
-	body = _get_statistics(client, "?topic=grammar")
-	client.cookies.clear()
-
-	assert body == {"total": 2, "answered": 1, "correct": 1, "incorrect": 0}
-
-
-def test_statistics_filtered_by_tag(client: TestClient, db_engine, monkeypatch) -> None:
-	monkeypatch.setattr(settings, "SECURE_REQUEST", True)
-	_seed_statistics_scenario(db_engine)
-
-	_authenticate(client, monkeypatch, "firebase-uid-abc")
-	body = _get_statistics(client, "?tag=partículas")
-	client.cookies.clear()
-
-	assert body == {"total": 2, "answered": 1, "correct": 1, "incorrect": 0}
-
-
-def test_statistics_with_combined_filters(
-	client: TestClient, db_engine, monkeypatch
-) -> None:
-	monkeypatch.setattr(settings, "SECURE_REQUEST", True)
-	_seed_statistics_scenario(db_engine)
-
-	_authenticate(client, monkeypatch, "firebase-uid-abc")
-	body = _get_statistics(client, "?level=5&topic=grammar&tag=partículas")
-	client.cookies.clear()
-
-	assert body == {"total": 1, "answered": 1, "correct": 1, "incorrect": 0}
-
-
-def test_statistics_ignores_other_users_answers(
-	client: TestClient, db_engine, monkeypatch
-) -> None:
-	monkeypatch.setattr(settings, "SECURE_REQUEST", True)
-	question_ids = _seed_statistics_scenario(db_engine)
-
-	with Session(db_engine) as session:
-		_seed_user(session, "firebase-uid-other")
-		session.add(
-			UserQuestion(
-				user_firebase_uid="firebase-uid-other",
-				question_id=question_ids["n4_grammar"],
-				status=QuestionStatus.CORRECT,
-				selected_alternative=1,
-			)
-		)
-		session.commit()
-
-	_authenticate(client, monkeypatch, "firebase-uid-abc")
-	body = _get_statistics(client, "?level=4")
-	client.cookies.clear()
-
-	assert body == {"total": 2, "answered": 0, "correct": 0, "incorrect": 0}
-
-
-def test_statistics_invalid_filters_return_zeros(
-	client: TestClient, db_engine, monkeypatch
-) -> None:
-	monkeypatch.setattr(settings, "SECURE_REQUEST", True)
-	_seed_statistics_scenario(db_engine)
-
-	_authenticate(client, monkeypatch, "firebase-uid-abc")
-	invalid_level = _get_statistics(client, "?level=99")
-	invalid_topic = _get_statistics(client, "?topic=algebra")
-	client.cookies.clear()
-
-	zeros = {"total": 0, "answered": 0, "correct": 0, "incorrect": 0}
-	assert invalid_level == zeros
-	assert invalid_topic == zeros

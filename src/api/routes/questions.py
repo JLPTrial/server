@@ -9,9 +9,7 @@ from ...models.question_response import (
     QuestionListResponse,
     QuestionRegisterRequest,
     QuestionRegisterResponse,
-    QuestionStatisticsResponse,
 )
-from ...models.statistic_response import StatisticResponse
 from ..services import question as question_services
 
 router = APIRouter(tags=["questions"])
@@ -57,26 +55,6 @@ def register_question(
         payload=payload,
     )
 
-
-# User answer statistics for a group of questions.
-@router.get(
-    "/questions/statistics",
-    response_model=QuestionStatisticsResponse,
-)
-def read_question_statistics(
-    db: DatabaseManagerDep,
-    current_user: Annotated[User, Depends(get_current_user)],
-    level: int | None = None,
-    topic: str | None = None,
-    tag: str | None = None,
-) -> dict[str, object]:
-    return question_services.get_question_statistics(
-        db=db,
-        current_user=current_user,
-        level_id=level,
-        topic=topic,
-        tag=tag,
-    )
 
 
 # Filters question by level
@@ -128,22 +106,4 @@ def read_level_topic_questions(
         answer_status=answer_status,
         page=page,
         limit=limit,
-    )
-
-
-
-# Statistics
-@router.get(
-    "/statistics",
-    response_model=StatisticResponse,
-)
-def read_statistics(
-    db: DatabaseManagerDep,
-    current_user: Annotated[User, Depends(get_current_user)],
-    period: str = "all",  # "all", "day", "week", "month", "year"
-) -> dict[str, object]:
-    return question_services.statistics(
-        db=db,
-        current_user=current_user,
-        period=period
     )
