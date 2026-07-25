@@ -44,6 +44,14 @@ class Settings(BaseSettings):
         "incorrect",
     ]
 
+    AVAILABLE_QUESTION_PERIODS: list[str] = [
+        "all",
+        "day",
+        "week",
+        "month",
+        "year",
+    ]
+
     @property
     def DATABASE_URL(self) -> str:
         return f"sqlite:///{self.SERVER_DB_FILE}"

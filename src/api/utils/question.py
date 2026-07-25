@@ -1,9 +1,10 @@
+from datetime import datetime, timedelta
 from typing import Any
 
 from sqlmodel import col
 
 from ...core.config import settings
-from ...models.question import Questions, QuestionStatus, Tags, UserQuestion
+from ...models.question import AnswerStatus, Questions, Tags, UserQuestion
 
 
 # Output formatter
@@ -18,17 +19,6 @@ def wrap_output(
         "limit": limit,
         "total": len(questions),
         "items": questions[start:end] if questions else [],
-    }
-
-
-def wrap_statistics_output(
-    *, total: int, correct: int, incorrect: int
-) -> dict[str, object]:
-    return {
-        "total": total,
-        "answered": correct + incorrect,
-        "correct": correct,
-        "incorrect": incorrect,
     }
 
 
@@ -63,6 +53,9 @@ def validate_question_level_id(level_id: int | None) -> bool:
 
 def validate_question_topic(topic: str | None) -> bool:
     return topic in settings.AVAILABLE_QUESTION_TOPICS
+
+def validate_period(period: str | None) -> bool:
+    return period in settings.AVAILABLE_QUESTION_PERIODS
 
 
 # Filters
@@ -111,11 +104,48 @@ def add_filter_answer_status(
     if answer_status == "correct":
         return stmt.join(Questions.users_link).where(
             (UserQuestion.user_firebase_uid == user_firebase_uid)
-            & (UserQuestion.status == QuestionStatus.CORRECT)
+            & (UserQuestion.status == AnswerStatus.CORRECT)
         )
 
     if answer_status == "incorrect":
         return stmt.join(Questions.users_link).where(
             (UserQuestion.user_firebase_uid == user_firebase_uid)
-            & (UserQuestion.status == QuestionStatus.INCORRECT)
+            & (UserQuestion.status == AnswerStatus.INCORRECT)
         )
+
+
+
+
+def period_to_start_date(period: str) -> datetime | None:
+    now = datetime.now()
+
+    if period == "all":
+        return None
+    elif period == "day":
+        return now - timedelta(days=1)
+    elif period == "week":
+        return now - timedelta(weeks=1)
+    elif period == "month":
+        return now - timedelta(days=30)
+    elif period == "year":
+        return now - timedelta(days=365)
+
+    raise ValueError(f"Invalid period: {period}")
+
+def get_timeline_bucket(date: datetime, period: str) -> str:
+    if period == "day":
+        return date.strftime("%Y-%m-%d")
+
+    if period == "week":
+        return date.strftime("%Y-%m-%d")
+
+    if period == "month":
+        return date.strftime("%Y-%m")
+
+    if period == "year":
+        return date.strftime("%Y")
+
+    if period == "all":
+        return date.strftime("%Y")
+
+    raise ValueError(f"Invalid period: {period}")

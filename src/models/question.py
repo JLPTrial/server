@@ -1,10 +1,11 @@
+from datetime import datetime
 from enum import Enum
 from typing import Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
 
-class QuestionStatus(Enum):
+class AnswerStatus(Enum):
     CORRECT = 1
     INCORRECT = 0
 
@@ -27,7 +28,12 @@ class UserQuestion(SQLModel, table=True):
         default=None, foreign_key="questions.id", primary_key=True
     )
 
-    status: QuestionStatus | None = Field(default=None)
+    date: datetime = Field(
+        default_factory=datetime.now,
+        index=True,
+    )
+
+    status: AnswerStatus | None = Field(default=None)
 
     selected_alternative: int | None = Field(default=None)
 
