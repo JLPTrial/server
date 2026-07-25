@@ -6,7 +6,7 @@ class StatisticsResponse(SQLModel):
     skills: list[dict[str, int | str]]
     skillTags: dict[str, list[dict[str, int | str]]]
     timeline: list[dict[str, int | str]]
-    database: dict[str, int]
+    database: dict[str, dict[str, int]]
 
 '''
 {

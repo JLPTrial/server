@@ -12,6 +12,7 @@ from ...models.question import (
 )
 from ...models.user import User
 from ..utils import question as question_utils
+from ..utils import statistics as statistics_utils
 
 
 def get_user_streak(
@@ -50,7 +51,9 @@ def get_period_statistics(
     db: DatabaseManagerDep,
     current_user: User,
     period: str,
+    level: str = "all"  # "all", "N4", "N5"
 ) -> tuple[int, int]:
+    level = statistics_utils.validate_question_level(level)
     start_date = question_utils.period_to_start_date(period)
 
     with db.session() as session:
@@ -69,6 +72,12 @@ def get_period_statistics(
             latest_interactions = latest_interactions.where(
                 UserQuestion.date >= start_date
             )
+
+        if level is not None:
+            latest_interactions = latest_interactions.join(
+                Questions,
+                Questions.id == UserQuestion.question_id,
+            ).where(Questions.level == level)
 
         latest_interactions = latest_interactions.subquery()
 
@@ -96,11 +105,13 @@ def get_question_type_statistics(
     db: DatabaseManagerDep,
     current_user: User,
     period: str,
+    level: str = "all"  # "all", "N4", "N5"
 ) -> list[dict[str, object]]:
 
     # Convert the period ("day", "week", "month", "year", "all")
     # into a date boundary. None means no date filter.
     start_date = question_utils.period_to_start_date(period)
+    level = statistics_utils.validate_question_level(level)
 
     with db.session() as session:
         # Find the latest interaction date for each question.
@@ -122,6 +133,12 @@ def get_question_type_statistics(
             latest_interactions = latest_interactions.where(
                 UserQuestion.date >= start_date
             )
+
+        if level is not None:
+            latest_interactions = latest_interactions.join(
+                Questions,
+                Questions.id == UserQuestion.question_id,
+            ).where(Questions.level == level)
 
         latest_interactions = latest_interactions.subquery()
 
@@ -182,8 +199,10 @@ def get_skill_tag_statistics(
     db: DatabaseManagerDep,
     current_user: User,
     period: str,
+    level: str = "all",
 ) -> dict[str, list[dict[str, object]]]:
     start_date = question_utils.period_to_start_date(period)
+    level = statistics_utils.validate_question_level(level)
 
     with db.session() as session:
         # Get the latest interaction for each question.
@@ -204,6 +223,12 @@ def get_skill_tag_statistics(
             latest_interactions = latest_interactions.where(
                 UserQuestion.date >= start_date
             )
+
+        if level is not None:
+            latest_interactions = latest_interactions.join(
+                Questions,
+                Questions.id == UserQuestion.question_id,
+            ).where(Questions.level == level)
 
         latest_interactions = latest_interactions.subquery()
 
@@ -262,20 +287,20 @@ def get_skill_tag_statistics(
         if tag not in skill_tags[question_type]:
             skill_tags[question_type][tag] = {
                 "correct": 0,
-                "wrong": 0,
+                "incorrect": 0,
             }
 
         if userQuestionStatus == AnswerStatus.CORRECT:
             skill_tags[question_type][tag]["correct"] = count
         elif userQuestionStatus == AnswerStatus.INCORRECT:
-            skill_tags[question_type][tag]["wrong"] = count
+            skill_tags[question_type][tag]["incorrect"] = count
 
     return {
         question_type: [
             {
                 "tag": tag,
                 "correct": values["correct"],
-                "wrong": values["wrong"],
+                "incorrect": values["incorrect"],
             }
             for tag, values in tags.items()
         ]
@@ -286,8 +311,11 @@ def get_user_timeline(
     db: DatabaseManagerDep,
     current_user: User,
     period: str,
+    level: str = "all"  # "all", "N4", "N5"
 ) -> list[dict[str, object]]:
+
     start_date = question_utils.period_to_start_date(period)
+    level = statistics_utils.validate_question_level(level)
 
     with db.session() as session:
         # Get the latest interaction for each question.
@@ -307,6 +335,12 @@ def get_user_timeline(
             latest_interactions = latest_interactions.where(
                 UserQuestion.date >= start_date
             )
+
+        if level is not None:
+            latest_interactions = latest_interactions.join(
+                Questions,
+                Questions.id == UserQuestion.question_id,
+            ).where(Questions.level == level)
 
         latest_interactions = latest_interactions.subquery()
 
@@ -355,75 +389,88 @@ def get_user_timeline(
 
 def get_database_statistics(
     db: DatabaseManagerDep,
+    level: str = "all",
 ) -> dict[str, dict[str, int]]:
+    level = statistics_utils.validate_question_level(level)
+
     with db.session() as session:
-        # Count questions by JLPT level.
-        level_counts = dict(
-            session.exec(
-                select(
-                    Questions.level,
-                    func.count(),
-                ).group_by(Questions.level)
-            ).all()
+        level_query = (
+            select(
+                Questions.level,
+                func.count(),
+            )
+            .group_by(Questions.level)
         )
 
-        # Count questions by question type.
-        question_type_counts = dict(
-            session.exec(
-                select(
-                    Questions.question_type,
-                    func.count(),
-                ).group_by(Questions.question_type)
-            ).all()
+        question_type_query = (
+            select(
+                Questions.question_type,
+                func.count(),
+            )
+            .group_by(Questions.question_type)
         )
 
-        # Count questions by tag.
-        tag_counts = dict(
-            session.exec(
-                select(
-                    Tags.name,
-                    func.count(),
-                )
-                .join(
-                    QuestionTags,
-                    QuestionTags.tag_id == Tags.id,
-                )
-                .group_by(Tags.name)
-            ).all()
+        tag_query = (
+            select(
+                Tags.name,
+                func.count(),
+            )
+            .join(
+                QuestionTags,
+                QuestionTags.tag_id == Tags.id,
+            )
+            .join(
+                Questions,
+                Questions.id == QuestionTags.question_id,
+            )
+            .group_by(Tags.name)
         )
 
-    return {
-        "levels": level_counts,
-        "question_types": question_type_counts,
-        "tags": tag_counts,
-    }
+        if level is not None:
+            level_query = level_query.where(Questions.level == level)
+            question_type_query = question_type_query.where(
+                Questions.level == level
+            )
+            tag_query = tag_query.where(Questions.level == level)
+
+        return {
+            "levels": dict(session.exec(level_query).all()),
+            "question_types": dict(session.exec(question_type_query).all()),
+            "tags": dict(session.exec(tag_query).all()),
+        }
+
 
 
 def statistics(
     db: DatabaseManagerDep,
     current_user: User,
     period: str = "all",
+    level: str = "all",  # "all", "N4", "N5"
 ) -> dict[str, object]:
     if not(question_utils.validate_period(period)):
         return {"invalid_period": period}
 
     # summary
     streak = get_user_streak(db, current_user)
-    correct, incorrect = get_period_statistics(db, current_user, period)
+    correct, incorrect = get_period_statistics(db, current_user, period, level)
     answered = correct + incorrect
     accuracy = (correct / answered) * 100 if answered > 0 else 0
+    accuracy = int(accuracy)
 
     # skills (question_types)
-    skills : dict[str, dict[str, str | int]] = {}
+    skills : list[dict[str, object]] = get_question_type_statistics(db,
+                                            current_user,
+                                            period,
+                                            level)
 
     # skillTags
-    skillTags = get_skill_tag_statistics(db, current_user, period)
+    skillTags = get_skill_tag_statistics(db, current_user, period, level)
 
     # timeline
-    timeline = get_user_timeline(db, current_user, period)
+    timeline = get_user_timeline(db, current_user, period, level)
 
     # database info
-    db_info = get_database_statistics(db)
+    db_info = get_database_statistics(db, level)
 
     # Return the statistics in a structured format
     return question_utils.wrap_statistics_output(

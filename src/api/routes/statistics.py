@@ -19,9 +19,11 @@ def read_statistics(
     db: DatabaseManagerDep,
     current_user: Annotated[User, Depends(get_current_user)],
     period: str = "all",  # "all", "day", "week", "month", "year"
+    level: str = "all",  # "all", "N4", "N5"
 ) -> dict[str, object]:
     return statistics_services.statistics(
         db=db,
         current_user=current_user,
-        period=period
+        period=period,
+        level=level
     )
