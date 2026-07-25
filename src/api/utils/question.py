@@ -21,25 +21,6 @@ def wrap_output(
         "items": questions[start:end] if questions else [],
     }
 
-def wrap_statistics_output(
-        **kwargs: dict[str, object]
-) -> dict[str, object]:
-    return {
-        "summary":{
-            "answered": kwargs.get("answered", 0),
-            "correct": kwargs.get("correct", 0),
-            "incorrect": kwargs.get("incorrect", 0),
-            "accuracy": kwargs.get("accuracy", 0.0),
-            "streak": kwargs.get("streak", 0)
-        },
-        "skills": kwargs.get("skills", []),
-        "skillTags": kwargs.get("skillTags", {}),
-        "timeline": kwargs.get("timeline", []),
-        "database": {
-            "totalQuestions": kwargs.get("totalQuestions", 0)
-        }
-    }
-
 
 # Settings getters
 def get_available_levels() -> list[str]:

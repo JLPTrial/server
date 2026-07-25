@@ -473,7 +473,7 @@ def statistics(
     db_info = get_database_statistics(db, level)
 
     # Return the statistics in a structured format
-    return question_utils.wrap_statistics_output(
+    return statistics_utils.wrap_statistics_output(
         streak=streak,
         answered=answered,
         correct=correct,
@@ -482,5 +482,5 @@ def statistics(
         skills=skills,
         skillTags=skillTags,
         timeline=timeline,
-        totalQuestions=db_info
+        database=db_info
     )
