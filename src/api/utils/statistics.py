@@ -1,5 +1,6 @@
 from ...core.config import settings
 
+
 def wrap_statistics_output(
         **kwargs: dict[str, object]
 ) -> dict[str, object]:
