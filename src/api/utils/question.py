@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from random import shuffle
 from typing import Any
 
 from sqlmodel import col
@@ -9,10 +10,14 @@ from ...models.question import AnswerStatus, Questions, Tags, UserQuestion
 
 # Output formatter
 def wrap_output(
-    questions: list[dict[str, object]], page: int, limit: int
+    questions: list[dict[str, object]], page: int, limit: int, random: str | None = None
 ) -> dict[str, object]:
     start = (page - 1) * limit
     end = start + limit
+
+    # Apply randomization if requested
+    if random and random.lower() == "true":
+        shuffle(questions)
 
     return {
         "page": page,

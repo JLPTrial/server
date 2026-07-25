@@ -25,6 +25,7 @@ def read_questions(
     question_id: int | None = None,
     tag: str | None = None,
     answer_status: str | None = None,
+    random: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
@@ -34,6 +35,7 @@ def read_questions(
         question_id=question_id,
         tag=tag,
         answer_status=answer_status,
+        random=random,
         page=page,
         limit=limit,
     )
@@ -68,6 +70,7 @@ def read_level_questions(
     level_id: int | None = None,  # 4 or 5, for example
     tag: str | None = None,
     answer_status: str | None = None,
+    random: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
@@ -77,6 +80,7 @@ def read_level_questions(
         level_id=level_id,
         tag=tag,
         answer_status=answer_status,
+        random=random,
         page=page,
         limit=limit,
     )
@@ -94,6 +98,7 @@ def read_level_topic_questions(
     topic_id: str | None = None,  # grammar, vocabulary, etc
     tag: str | None = None,
     answer_status: str | None = None,
+    random: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
@@ -104,6 +109,7 @@ def read_level_topic_questions(
         topic_id=topic_id,
         tag=tag,
         answer_status=answer_status,
+        random=random,
         page=page,
         limit=limit,
     )

@@ -24,6 +24,7 @@ def get_questions(
     question_id: int | None = None,
     tag: str | None = None,
     answer_status: str | None = None,
+    random: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
@@ -47,7 +48,7 @@ def get_questions(
         results = [format_question(q) for q in rows]
 
     # Return paginated response with question data
-    return question_utils.wrap_output(results, page, limit)
+    return question_utils.wrap_output(results, page, limit, random=random)
 
 
 def register_question(
@@ -111,6 +112,7 @@ def get_level_questions(
     level_id: int | None = None,  # 4 or 5, for example
     tag: str | None = None,
     answer_status: str | None = None,
+    random: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
@@ -140,7 +142,7 @@ def get_level_questions(
         results = [format_question(q) for q in rows]
 
     # Return paginated response with question data
-    return question_utils.wrap_output(results, page, limit)
+    return question_utils.wrap_output(results, page, limit, random=random)
 
 
 def get_level_topic_questions(
@@ -150,6 +152,7 @@ def get_level_topic_questions(
     topic_id: str | None = None,  # grammar, vocabulary, etc
     tag: str | None = None,
     answer_status: str | None = None,
+    random: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> dict[str, object]:
@@ -184,4 +187,4 @@ def get_level_topic_questions(
         results = [format_question(q) for q in rows]
 
     # Return paginated response with question data
-    return question_utils.wrap_output(results, page, limit)
+    return question_utils.wrap_output(results, page, limit, random=random)
