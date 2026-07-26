@@ -57,10 +57,10 @@ def validate_question_level_id(level_id: int | None) -> bool:
 
 
 def validate_question_topic(topic: str | None) -> bool:
-    return topic in settings.AVAILABLE_QUESTION_TOPICS
+    return topic in settings.AVAILABLE_QUESTION_TYPES
 
 def validate_period(period: str | None) -> bool:
-    return period in settings.AVAILABLE_QUESTION_PERIODS
+    return period in settings.AVAILABLE_STATISTICS_PERIODS
 
 
 # Filters

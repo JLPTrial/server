@@ -28,7 +28,7 @@ class Settings(BaseSettings):
 
     AVAILABLE_QUESTION_LEVELS: dict[int, str] = {4: "N4", 5: "N5"}
 
-    AVAILABLE_QUESTION_TOPICS: list[str] = [
+    AVAILABLE_QUESTION_TYPES: list[str] = [
         "grammar",
         "vocabulary",
         "kanji",
@@ -44,7 +44,7 @@ class Settings(BaseSettings):
         "incorrect",
     ]
 
-    AVAILABLE_QUESTION_PERIODS: list[str] = [
+    AVAILABLE_STATISTICS_PERIODS: list[str] = [
         "all",
         "day",
         "week",
