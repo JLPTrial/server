@@ -1,6 +1,7 @@
 from typing import cast
 
 from fastapi import HTTPException, status
+from random import shuffle
 from sqlmodel import select
 
 from ...database.session import DatabaseManagerDep
@@ -11,6 +12,7 @@ from ...models.question import (
 )
 from ...models.question_response import QuestionRegisterRequest
 from ...models.user import User
+from ...core.config import settings
 from ..utils import question as question_utils
 from ..utils.question_formatter import format_question
 
@@ -188,3 +190,62 @@ def get_level_topic_questions(
 
     # Return paginated response with question data
     return question_utils.wrap_output(results, page, limit, random=random)
+
+
+# MOCK TEST
+
+def get_question(
+    db: DatabaseManagerDep,
+    level_id: int | None = None,  # 4 or 5, for example
+    topic_id: str | None = None,  # grammar, vocabulary, etc
+    tag: str | None = None,
+    statement_id: int | None = None,
+    n: int = 1,
+    random : bool = True,
+) -> list[dict[str, object]]:
+
+    with db.session() as session:
+        # Selecting all questions
+        stmt = select(Questions)
+
+        # Filter by level
+        if question_utils.validate_question_level_id(level_id):
+            level = question_utils.get_level_name(cast(int, level_id))
+            stmt = question_utils.add_filter_level(stmt, level)
+
+        # Filter by topic
+        if question_utils.validate_question_topic(topic_id):
+            stmt = question_utils.add_filter_topic(stmt, topic_id)
+
+        # Filter tag if provided
+        stmt = question_utils.add_filter_tag(stmt, tag)
+
+        # Filter statement_id if provided
+        stmt = question_utils.add_filter_statement_id(stmt, statement_id)
+
+        # Collecting results
+        rows = session.exec(stmt).all()
+        results = [format_question(q) for q in rows]
+        results = results[:n]
+
+        # Randomize the results if requested
+        if random:
+            shuffle(results)
+
+    # Return paginated response with question data
+    return results
+
+def get_mock_test(
+    db: DatabaseManagerDep,
+    level_id: int | None = None,  # 4 or 5, for example
+):
+    # Initialize an empty list to hold the mock test questions
+    mock = []
+    for n, topic_id, statement_id in settings.MOCK_GUIDE[level_id]:
+        mock.extend(get_question(db, 
+                            level_id=level_id, 
+                            n=n, 
+                            statement_id=statement_id, 
+                            topic_id=topic_id))
+        
+    return question_utils.wrap_output(mock, page=1, limit=len(mock), random=None)

@@ -62,7 +62,6 @@ def validate_question_topic(topic: str | None) -> bool:
 def validate_period(period: str | None) -> bool:
     return period in settings.AVAILABLE_STATISTICS_PERIODS
 
-
 # Filters
 def add_filter_level(stmt: Any, level: str | None) -> Any:
     if level:
@@ -85,6 +84,12 @@ def add_filter_topic(stmt: Any, topic: str | None) -> Any:
 def add_filter_tag(stmt: Any, tag: str | None) -> Any:
     if tag:
         return stmt.join(Questions.tags).where(col(Tags.name).ilike(f"%{tag}%"))
+    return stmt
+
+
+def add_filter_statement_id(stmt: Any, statement_id: int | None) -> Any:
+    if statement_id:
+        return stmt.where(Questions.statement_id == statement_id)
     return stmt
 
 
