@@ -1,9 +1,10 @@
+from random import shuffle
 from typing import cast
 
 from fastapi import HTTPException, status
-from random import shuffle
 from sqlmodel import select
 
+from ...core.config import settings
 from ...database.session import DatabaseManagerDep
 from ...models.question import (
     AnswerStatus,
@@ -12,7 +13,6 @@ from ...models.question import (
 )
 from ...models.question_response import QuestionRegisterRequest
 from ...models.user import User
-from ...core.config import settings
 from ..utils import question as question_utils
 from ..utils.question_formatter import format_question
 
@@ -242,10 +242,10 @@ def get_mock_test(
     # Initialize an empty list to hold the mock test questions
     mock = []
     for n, topic_id, statement_id in settings.MOCK_GUIDE[level_id]:
-        mock.extend(get_question(db, 
-                            level_id=level_id, 
-                            n=n, 
-                            statement_id=statement_id, 
+        mock.extend(get_question(db,
+                            level_id=level_id,
+                            n=n,
+                            statement_id=statement_id,
                             topic_id=topic_id))
-        
+
     return question_utils.wrap_output(mock, page=1, limit=len(mock), random=None)

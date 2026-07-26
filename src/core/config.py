@@ -67,7 +67,7 @@ class Settings(BaseSettings):
             (3, "reading", 17),
             (5, "reading", 10),
             (7, "listening", 6),
-            (6, "listening", 5),  
+            (6, "listening", 5),
             (6, "listening", 8),
             (5, "listening", 7),
         ],
@@ -83,7 +83,7 @@ class Settings(BaseSettings):
             (4, "reading", 11),
             (8, "reading", 10),
             (8, "listening", 6),
-            (7, "listening", 5),  
+            (7, "listening", 5),
             (8, "listening", 8),
             (5, "listening", 7),
         ]
