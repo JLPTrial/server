@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Optional
 
@@ -29,7 +29,7 @@ class UserQuestion(SQLModel, table=True):
     )
 
     date: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         index=True,
     )
 

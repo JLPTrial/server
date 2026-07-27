@@ -2,6 +2,7 @@ from datetime import UTC, datetime, timedelta
 
 from sqlmodel import func, select
 
+from ...core.config import settings
 from ...database.session import DatabaseManagerDep
 from ...models.question import (
     AnswerStatus,
@@ -20,12 +21,15 @@ def get_user_streak(
     current_user: User,
 ) -> int:
     with db.session() as session:
-        interaction_days = session.exec(
-            select(func.date(UserQuestion.date))
-            .where(UserQuestion.user_firebase_uid == current_user.firebase_uid)
-            .distinct()
-            .order_by(func.date(UserQuestion.date).desc())
-        ).all()
+        interaction_days = {
+            dt.date()
+            for dt in session.exec(
+                select(UserQuestion.date)
+                .where(UserQuestion.user_firebase_uid == current_user.firebase_uid)
+                .distinct()
+                .order_by(UserQuestion.date.desc())
+            )
+        }
 
     if not interaction_days:
         return 0
@@ -185,14 +189,22 @@ def get_question_type_statistics(
             statistics[question_type]["incorrect"] = count
 
     # Convert the internal dictionary into the API response format.
-    return [
-        {
+    results = []
+    for question_type in settings.AVAILABLE_QUESTION_TYPES:
+        if question_type not in statistics:
+            statistics[question_type] = {
+                "correct": 0,
+                "incorrect": 0,
+            }
+
+        values = statistics[question_type]
+        results.append({
             "skill": question_type,
             "correct": values["correct"],
             "incorrect": values["incorrect"],
-        }
-        for question_type, values in statistics.items()
-    ]
+        })
+
+    return results
 
 
 def get_skill_tag_statistics(
@@ -205,9 +217,8 @@ def get_skill_tag_statistics(
     level = statistics_utils.validate_question_level(level)
 
     with db.session() as session:
+
         # Get the latest interaction for each question.
-        # This removes previous attempts and keeps only the current status
-        # of each question for this user.
         latest_interactions = (
             select(
                 UserQuestion.question_id,
@@ -228,12 +239,35 @@ def get_skill_tag_statistics(
             latest_interactions = latest_interactions.join(
                 Questions,
                 Questions.id == UserQuestion.question_id,
-            ).where(Questions.level == level)
+            ).where(
+                Questions.level == level
+            )
 
         latest_interactions = latest_interactions.subquery()
 
-        # Count correct/incorrect answers grouped by:
-        # question_type -> tag -> status
+        tag_query = (
+            select(
+                Questions.question_type,
+                Tags.name,
+            )
+            .join(
+                QuestionTags,
+                QuestionTags.question_id == Questions.id,
+            )
+            .join(
+                Tags,
+                Tags.id == QuestionTags.tag_id,
+            )
+            .distinct()
+        )
+
+        if level is not None:
+            tag_query = tag_query.where(
+                Questions.level == level
+            )
+
+        tag_rows = session.exec(tag_query).all()
+
         results = session.exec(
             select(
                 Questions.question_type,
@@ -268,32 +302,25 @@ def get_skill_tag_statistics(
             )
         ).all()
 
-    # Build:
-    # {
-    #     "Grammar": [
-    #         {
-    #             "tag": "Particles",
-    #             "correct": 30,
-    #             "wrong": 5
-    #         }
-    #     ]
-    # }
+    # Initialize every valid tag with zero counts.
     skill_tags: dict[str, dict[str, dict[str, int]]] = {}
 
-    for question_type, tag, userQuestionStatus, count in results:
-        if question_type not in skill_tags:
-            skill_tags[question_type] = {}
+    for question_type, tag in tag_rows:
+        skill_tags.setdefault(question_type, {})[tag] = {
+            "correct": 0,
+            "incorrect": 0,
+        }
 
-        if tag not in skill_tags[question_type]:
-            skill_tags[question_type][tag] = {
-                "correct": 0,
-                "incorrect": 0,
-            }
-
-        if userQuestionStatus == AnswerStatus.CORRECT:
+    # Fill in the user's actual counts.
+    for question_type, tag, status, count in results:
+        if status == AnswerStatus.CORRECT:
             skill_tags[question_type][tag]["correct"] = count
-        elif userQuestionStatus == AnswerStatus.INCORRECT:
+        elif status == AnswerStatus.INCORRECT:
             skill_tags[question_type][tag]["incorrect"] = count
+
+    # Ensure every available question type exists in the response.
+    for question_type in settings.AVAILABLE_QUESTION_TYPES:
+        skill_tags.setdefault(question_type, {})
 
     return {
         question_type: [
