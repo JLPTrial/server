@@ -52,6 +52,43 @@ class Settings(BaseSettings):
         "year",
     ]
 
+    # Mock test guide (n, topic_id, statement_id)
+    MOCK_GUIDE: dict[int, list[tuple]] = {
+        5: [
+            (7, "kanji", 3),
+            (5, "kanji", 4),
+            #(6, "vocabulary",14),
+            (12, "vocabulary",12),
+            (6, "vocabulary",13),
+            (5, "grammar", 15),
+            (4, "grammar", 2),
+            (2, "reading", 16),
+            (4, "reading", 11),
+            (3, "reading", 17),
+            (5, "reading", 10),
+            (7, "listening", 6),
+            (6, "listening", 5),
+            (6, "listening", 8),
+            (5, "listening", 7),
+        ],
+
+        4: [
+            (7, "kanji", 3),
+            (5, "kanji", 4),
+            (8, "vocabulary",12),
+            (4, "vocabulary",13),
+            (4, "vocabulary",14),
+            (13, "grammar", 1),
+            (4, "grammar", 2),
+            (4, "reading", 11),
+            (8, "reading", 10),
+            (8, "listening", 6),
+            (7, "listening", 5),
+            (8, "listening", 8),
+            (5, "listening", 7),
+        ]
+    }
+
     @property
     def DATABASE_URL(self) -> str:
         return f"sqlite:///{self.SERVER_DB_FILE}"
