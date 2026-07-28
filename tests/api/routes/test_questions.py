@@ -5,7 +5,6 @@ from sqlmodel import Session, select
 
 from src.api.utils.cookies import SESSION_COOKIE_NAME
 from src.core.config import settings
-from src.core.firebase.initialization import FirebaseIdentity
 from src.models import Alternatives, Questions, Statement, Tags, User, UserQuestion
 from src.models.question import AnswerStatus
 

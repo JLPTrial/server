@@ -2,8 +2,8 @@ from fastapi.testclient import TestClient
 from sqlmodel import select
 
 from src.api.routes import login as login_routes
-from src.core.config import settings
 from src.api.utils.cookies import SESSION_COOKIE_NAME
+from src.core.config import settings
 from src.core.firebase.initialization import FirebaseIdentity
 from src.models import User
 

@@ -6,10 +6,10 @@ def format_question(question: Questions) -> dict[str, object]:
     if question.media is not None:
 
         # prefixing media file paths with "media/" to serve them correctly
-        if question.media.audio_file_path != None:
+        if question.media.audio_file_path is not None:
             question.media.audio_file_path = f"media/{question.media.audio_file_path}"
 
-        if question.media.image_file_path != None:
+        if question.media.image_file_path is not None:
             question.media.image_file_path = f"media/{question.media.image_file_path}"
 
         # handling contextual text
