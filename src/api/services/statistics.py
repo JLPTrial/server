@@ -58,7 +58,7 @@ def get_period_statistics(
     level: str = "all"  # "all", "N4", "N5"
 ) -> tuple[int, int]:
     level = statistics_utils.validate_question_level(level)
-    start_date = question_utils.period_to_start_date(period)
+    start_date = statistics_utils.period_to_start_date(period)
 
     with db.session() as session:
         latest_interactions = (
@@ -114,7 +114,7 @@ def get_question_type_statistics(
 
     # Convert the period ("day", "week", "month", "year", "all")
     # into a date boundary. None means no date filter.
-    start_date = question_utils.period_to_start_date(period)
+    start_date = statistics_utils.period_to_start_date(period)
     level = statistics_utils.validate_question_level(level)
 
     with db.session() as session:
@@ -213,7 +213,7 @@ def get_skill_tag_statistics(
     period: str,
     level: str = "all",
 ) -> dict[str, list[dict[str, object]]]:
-    start_date = question_utils.period_to_start_date(period)
+    start_date = statistics_utils.period_to_start_date(period)
     level = statistics_utils.validate_question_level(level)
 
     with db.session() as session:
@@ -338,10 +338,10 @@ def get_user_timeline(
     db: DatabaseManagerDep,
     current_user: User,
     period: str,
-    level: str = "all"  # "all", "N4", "N5"
+    level: str = "all",
 ) -> list[dict[str, object]]:
 
-    start_date = question_utils.period_to_start_date(period)
+    start_date = statistics_utils.period_to_start_date(period)
     level = statistics_utils.validate_question_level(level)
 
     with db.session() as session:
@@ -354,10 +354,9 @@ def get_user_timeline(
             .where(
                 UserQuestion.user_firebase_uid == current_user.firebase_uid
             )
-            .group_by(UserQuestion.question_id)
         )
 
-        # Apply period filtering before removing duplicates.
+        # Apply filters before removing duplicates.
         if start_date is not None:
             latest_interactions = latest_interactions.where(
                 UserQuestion.date >= start_date
@@ -367,9 +366,13 @@ def get_user_timeline(
             latest_interactions = latest_interactions.join(
                 Questions,
                 Questions.id == UserQuestion.question_id,
-            ).where(Questions.level == level)
+            ).where(
+                Questions.level == level
+            )
 
-        latest_interactions = latest_interactions.subquery()
+        latest_interactions = latest_interactions.group_by(
+            UserQuestion.question_id
+        ).subquery()
 
         interactions = session.exec(
             select(UserQuestion)
@@ -383,20 +386,15 @@ def get_user_timeline(
             )
         ).all()
 
-    # Aggregate interactions into timeline buckets.
-    timeline: dict[str, dict[str, int]] = {}
+    # Initialize all expected buckets.
+    timeline = statistics_utils.get_empty_timeline(period)
 
+    # Aggregate interactions into timeline buckets.
     for interaction in interactions:
-        bucket = question_utils.get_timeline_bucket(
+        bucket = statistics_utils.get_timeline_bucket(
             interaction.date,
             period,
         )
-
-        if bucket not in timeline:
-            timeline[bucket] = {
-                "correct": 0,
-                "incorrect": 0,
-            }
 
         if interaction.status == AnswerStatus.CORRECT:
             timeline[bucket]["correct"] += 1
@@ -404,14 +402,13 @@ def get_user_timeline(
         elif interaction.status == AnswerStatus.INCORRECT:
             timeline[bucket]["incorrect"] += 1
 
-    # Sort chronologically and convert to API format.
     return [
         {
             "period": bucket,
             "correct": values["correct"],
             "incorrect": values["incorrect"],
         }
-        for bucket, values in sorted(timeline.items())
+        for bucket, values in timeline.items()
     ]
 
 def get_database_statistics(
