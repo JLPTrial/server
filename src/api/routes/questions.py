@@ -122,7 +122,7 @@ def read_level_topic_questions(
 )
 def read_mock_test_questions(
     db: DatabaseManagerDep,
-    #_current_user: Annotated[User, Depends(get_current_user)],
+    _current_user: Annotated[User, Depends(get_current_user)],
     level_id: int | None = None,  # 4 or 5, for example
 ) -> list[dict[str, object]]:
     return question_services.get_mock_test(
