@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta
 from random import shuffle
 from typing import Any
 
@@ -124,38 +123,3 @@ def add_filter_answer_status(
         )
 
 
-
-
-def period_to_start_date(period: str) -> datetime | None:
-    now = datetime.now()
-
-    if period == "all":
-        return None
-    elif period == "day":
-        return now - timedelta(days=1)
-    elif period == "week":
-        return now - timedelta(weeks=1)
-    elif period == "month":
-        return now - timedelta(days=30)
-    elif period == "year":
-        return now - timedelta(days=365)
-
-    raise ValueError(f"Invalid period: {period}")
-
-def get_timeline_bucket(date: datetime, period: str) -> str:
-    if period == "day":
-        return date.strftime("%Y-%m-%d")
-
-    if period == "week":
-        return date.strftime("%Y-%m-%d")
-
-    if period == "month":
-        return date.strftime("%Y-%m")
-
-    if period == "year":
-        return date.strftime("%Y")
-
-    if period == "all":
-        return date.strftime("%Y")
-
-    raise ValueError(f"Invalid period: {period}")
