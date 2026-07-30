@@ -204,7 +204,6 @@ def get_question(
     n: int = 1,
     random: bool = True,
 ) -> list[dict[str, object]]:
-
     with db.session() as session:
         # Selecting all questions
         stmt = select(Questions)

@@ -108,7 +108,6 @@ def get_question_type_statistics(
     period: str,
     level: str = "all",  # "all", "N4", "N5"
 ) -> list[dict[str, object]]:
-
     # Convert the period ("day", "week", "month", "year", "all")
     # into a date boundary. None means no date filter.
     start_date = statistics_utils.period_to_start_date(period)
@@ -327,7 +326,6 @@ def get_user_timeline(
     period: str,
     level: str = "all",
 ) -> list[dict[str, object]]:
-
     start_date = statistics_utils.period_to_start_date(period)
     level = statistics_utils.validate_question_level(level)
 
