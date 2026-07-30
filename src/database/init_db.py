@@ -1,12 +1,10 @@
-from .metadata import QUESTION_METADATA, USER_METADATA
-from .session import ENGINES
+from alembic import command
+from alembic.config import Config
+
+from ..core.config import SERVER_DIR
 
 
 def init_db() -> None:
-    # Cria as tabelas para os usuários
-    USER_METADATA.create_all(ENGINES["users"])
-
-    # Cria as tabelas para as questões em todos os bancos de dados, exceto "users"
-    for name in ENGINES:
-        if name != "users":
-            QUESTION_METADATA.create_all(ENGINES[name])
+    # Aplica as migrações pendentes no banco unificado
+    alembic_cfg = Config(str(SERVER_DIR / "alembic.ini"))
+    command.upgrade(alembic_cfg, "head")

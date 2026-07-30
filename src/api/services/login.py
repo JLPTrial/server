@@ -1,81 +1,52 @@
 from sqlmodel import Session, select
 
-from ...core.firebase.initialization import FirebaseTokenError
-from ...core.firebase.operations import (
-    verify_firebase_id_token,
-    verify_firebase_session_cookie,
+from ...core.firebase.authentication import (
+    resolve_login_identity,
+    resolve_session_identity,
+    resolve_signup_identity,
 )
+from ...core.firebase.initialization import FirebaseIdentity
 from ...database.session import DatabaseManagerDep
 from ...models import FirebaseLoginRequest, FirebaseSignupRequest, User
 
-INVALID_UID_TOKEN_MESSAGE = "Invalid uid token"  # nosec B105
-INVALID_SESSION_COOKIE_MESSAGE = "Invalid Firebase session cookie"  # nosec B105
-USER_NOT_REGISTERED_MESSAGE = "User is not registered"  # nosec B105
-USER_NOT_FOUND_MESSAGE = "User not found"  # nosec B105
+
+def signup_user(
+    db: DatabaseManagerDep, credentials: FirebaseSignupRequest
+) -> FirebaseIdentity:
+    identity = resolve_signup_identity(credentials)
+
+    _get_local_user(db, identity.uid)
+    return identity
 
 
-def signup_user(db: DatabaseManagerDep, credentials: FirebaseSignupRequest) -> User:
-    with db.session("users") as session:
-        try:
-            identity = verify_firebase_id_token(credentials.uid_token)
-        except FirebaseTokenError as exc:
-            raise ValueError(INVALID_UID_TOKEN_MESSAGE) from exc
+def login_user(
+    db: DatabaseManagerDep, credentials: FirebaseLoginRequest
+) -> FirebaseIdentity:
+    identity = resolve_login_identity(credentials)
 
-        user = _get_user_by_firebase_uid(session, identity.uid)
-
-        if user is None:
-            user = session.exec(
-                select(User).where(User.email == identity.email)
-            ).first()
-
-        name = credentials.name.strip() or identity.name or identity.email.split("@")[0]
-
-        if user:
-            user.firebase_uid = identity.uid
-            user.email = identity.email
-            user.name = name
-            session.add(user)
-            session.commit()
-            session.refresh(user)
-            return user
-
-        user = User(
-            firebase_uid=identity.uid,
-            email=identity.email,
-            name=name,
-        )
-        session.add(user)
-        session.commit()
-        session.refresh(user)
-        return user
+    _get_local_user(db, identity.uid)
+    return identity
 
 
-def login_user(db: DatabaseManagerDep, credentials: FirebaseLoginRequest) -> User:
-    with db.session("users") as session:
-        try:
-            identity = verify_firebase_id_token(credentials.uid_token)
-        except FirebaseTokenError as exc:
-            raise ValueError(INVALID_UID_TOKEN_MESSAGE) from exc
+def get_identity_from_session_cookie(
+    db: DatabaseManagerDep, session_cookie: str
+) -> FirebaseIdentity:
+    identity = resolve_session_identity(session_cookie)
 
-    user = _get_user_by_firebase_uid(session, identity.uid)
-    if not user:
-        raise LookupError(USER_NOT_REGISTERED_MESSAGE)
-
-    return user
+    _get_local_user(db, identity.uid)
+    return identity
 
 
 def get_user_from_session_cookie(db: DatabaseManagerDep, session_cookie: str) -> User:
-    with db.session("users") as session:
-        try:
-            identity = verify_firebase_session_cookie(session_cookie)
-        except FirebaseTokenError as exc:
-            raise ValueError(INVALID_SESSION_COOKIE_MESSAGE) from exc
+    identity = get_identity_from_session_cookie(db, session_cookie)
+    return User(firebase_uid=identity.uid)
 
-        user = _get_user_by_firebase_uid(session, identity.uid)
-        if not user:
-            raise LookupError(USER_NOT_FOUND_MESSAGE)
 
-        return user
+def _get_local_user(db: DatabaseManagerDep, firebase_uid: str) -> None:
+    with db.session() as session:
+        if _get_user_by_firebase_uid(session, firebase_uid) is None:
+            session.add(User(firebase_uid=firebase_uid))
+            session.commit()
 
 
 def _get_user_by_firebase_uid(session: Session, firebase_uid: str) -> User | None:

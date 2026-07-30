@@ -2,7 +2,7 @@
 # Para que o Davi não tenha que buscar os dados da questão, estes DTOs juntos do
 # format_questions resolvem para ele.
 
-from sqlmodel import SQLModel
+from sqlmodel import Field, SQLModel
 
 
 class QuestionStatementResponse(SQLModel):
@@ -29,6 +29,8 @@ class QuestionMediaResponse(SQLModel):
 
 class QuestionResponse(SQLModel):
     id: int
+    uid: str
+    level: str
     question_type: str
     question_text: str
     statement: QuestionStatementResponse
@@ -42,3 +44,14 @@ class QuestionListResponse(SQLModel):
     limit: int
     total: int
     items: list[QuestionResponse]
+
+
+class QuestionRegisterRequest(SQLModel):
+    question_uid: str
+    selected_alternative: int = Field(ge=1, le=4)
+
+
+class QuestionRegisterResponse(SQLModel):
+    question_uid: str
+    selected_alternative: int
+    status: str

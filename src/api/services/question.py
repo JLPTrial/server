@@ -1,54 +1,252 @@
-from typing import Any, cast
+from random import shuffle
+from typing import cast
+
+from fastapi import HTTPException, status
+from sqlmodel import select
 
 from ...core.config import settings
-from ...models.question import Questions, QuestionStatus, Tags, UserQuestion
+from ...database.session import DatabaseManagerDep
+from ...models.question import (
+    AnswerStatus,
+    Questions,
+    UserQuestion,
+)
+from ...models.question_response import QuestionRegisterRequest
+from ...models.user import User
+from ..utils import question as question_utils
+from ..utils.question_formatter import format_question
 
 
-def get_available_question_databases_ids() -> list[str]:
-    return list(settings.AVAILABLE_QUESTION_DATABASES.values())
+##################
+# Route Functions
+##################
+def get_questions(
+    db: DatabaseManagerDep,
+    _current_user: User,
+    question_id: int | None = None,
+    tag: str | None = None,
+    answer_status: str | None = None,
+    random: str | None = None,
+    page: int = 1,
+    limit: int = 20,
+) -> dict[str, object]:
+    with db.session() as session:
+        # Selecting all questions
+        stmt = select(Questions)
 
+        # Filter by question_id if provided
+        stmt = question_utils.add_filter_question_id(stmt, question_id)
 
-def get_question_database_title(database_id: int) -> str:
-    return settings.AVAILABLE_QUESTION_DATABASES[database_id]
+        # Filter tag if provided
+        stmt = question_utils.add_filter_tag(stmt, tag)
 
-
-# Validations
-def validate_question_database_id(database_id: int | None) -> bool:
-    return database_id in settings.AVAILABLE_QUESTION_DATABASES
-
-
-def validate_question_topic(topic: str | None) -> bool:
-    return topic in settings.AVAILABLE_QUESTION_TOPICS
-
-
-# Filters
-def add_filter_question_id(stmt: Any, question_id: int | None) -> Any:
-    if question_id:
-        return stmt.where(Questions.id == question_id)
-    return stmt
-
-
-def add_filter_topic(stmt: Any, topic: str | None) -> Any:
-    if topic:
-        return stmt.where(Questions.question_type == topic)
-    return stmt
-
-
-def add_filter_tag(stmt: Any, tag: str | None) -> Any:
-    if tag:
-        # Eu realmente não gosto de usar cast, mas aparentemente, o mypy sofre sem ele...
-        return stmt.join(Questions.tags).where(cast(Any, Tags.name).ilike(f"%{tag}%"))
-    return stmt
-
-
-def add_filter_answered(stmt: Any, answered: str | None, user_firebase_uid: str) -> Any:
-    if not answered or answered == "false" or not user_firebase_uid:
-        return stmt
-
-    return stmt.outerjoin(Questions.users_link).where(
-        (UserQuestion.user_firebase_uid == user_firebase_uid)
-        & (
-            (UserQuestion.status == QuestionStatus.CORRECT)
-            | (UserQuestion.status == QuestionStatus.INCORRECT)
+        # Filter by answer status if provided
+        stmt = question_utils.add_filter_answer_status(
+            stmt, answer_status, _current_user.firebase_uid
         )
-    )
+
+        # Collecting results
+        rows = session.exec(stmt).all()
+        results = [format_question(q) for q in rows]
+
+    # Return paginated response with question data
+    return question_utils.wrap_output(results, page, limit, random=random)
+
+
+def register_question(
+    db: DatabaseManagerDep,
+    current_user: User,
+    payload: QuestionRegisterRequest,
+) -> dict[str, object]:
+    with db.session() as session:
+        question = session.exec(
+            select(Questions).where(Questions.uid == payload.question_uid)
+        ).first()
+        if question is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Question not found",
+            )
+
+        if question.alternatives is None:
+            raise ValueError("Question has no alternatives")
+
+        if (
+            payload.selected_alternative == 4
+            and question.alternatives.alternative_4 is None
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="Invalid alternative for this question",
+            )
+
+        answer_status = (
+            AnswerStatus.CORRECT
+            if payload.selected_alternative == question.alternatives.correct_alternative
+            else AnswerStatus.INCORRECT
+        )
+
+        user_question = session.get(
+            UserQuestion, (current_user.firebase_uid, question.id)
+        )
+        if user_question is None:
+            user_question = UserQuestion(
+                user_firebase_uid=current_user.firebase_uid,
+                question_id=question.id,
+            )
+
+        user_question.status = answer_status
+        user_question.selected_alternative = payload.selected_alternative
+
+        session.add(user_question)
+        session.commit()
+
+    return {
+        "question_uid": payload.question_uid,
+        "selected_alternative": payload.selected_alternative,
+        "status": answer_status.name.lower(),
+    }
+
+
+def get_level_questions(
+    db: DatabaseManagerDep,
+    _current_user: User,
+    level_id: int | None = None,  # 4 or 5, for example
+    tag: str | None = None,
+    answer_status: str | None = None,
+    random: str | None = None,
+    page: int = 1,
+    limit: int = 20,
+) -> dict[str, object]:
+    # Validate level_id before querying the database
+    if not (question_utils.validate_parameters({"level_id": level_id})):
+        return question_utils.wrap_output([], page, limit)
+
+    level = question_utils.get_level_name(cast(int, level_id))
+
+    with db.session() as session:
+        # Selecting all questions
+        stmt = select(Questions)
+
+        # Filter by level
+        stmt = question_utils.add_filter_level(stmt, level)
+
+        # Filter tag if provided
+        stmt = question_utils.add_filter_tag(stmt, tag)
+
+        # Filter by answer status if provided
+        stmt = question_utils.add_filter_answer_status(
+            stmt, answer_status, _current_user.firebase_uid
+        )
+
+        # Collecting results
+        rows = session.exec(stmt).all()
+        results = [format_question(q) for q in rows]
+
+    # Return paginated response with question data
+    return question_utils.wrap_output(results, page, limit, random=random)
+
+
+def get_level_topic_questions(
+    db: DatabaseManagerDep,
+    _current_user: User,
+    level_id: int | None = None,  # 4 or 5, for example
+    topic_id: str | None = None,  # grammar, vocabulary, etc
+    tag: str | None = None,
+    answer_status: str | None = None,
+    random: str | None = None,
+    page: int = 1,
+    limit: int = 20,
+) -> dict[str, object]:
+    # Validate level_id and topic_id before querying the database
+    if not (
+        question_utils.validate_parameters({"level_id": level_id, "topic": topic_id})
+    ):
+        return question_utils.wrap_output([], page, limit)
+
+    level = question_utils.get_level_name(cast(int, level_id))
+
+    with db.session() as session:
+        # Selecting all questions
+        stmt = select(Questions)
+
+        # Filter by level
+        stmt = question_utils.add_filter_level(stmt, level)
+
+        # Filter by topic
+        stmt = question_utils.add_filter_topic(stmt, topic_id)
+
+        # Filter tag if provided
+        stmt = question_utils.add_filter_tag(stmt, tag)
+
+        # Filter by answer status if provided
+        stmt = question_utils.add_filter_answer_status(
+            stmt, answer_status, _current_user.firebase_uid
+        )
+
+        # Collecting results
+        rows = session.exec(stmt).all()
+        results = [format_question(q) for q in rows]
+
+    # Return paginated response with question data
+    return question_utils.wrap_output(results, page, limit, random=random)
+
+
+# MOCK TEST
+
+
+def get_question(
+    db: DatabaseManagerDep,
+    level_id: int | None = None,  # 4 or 5, for example
+    topic_id: str | None = None,  # grammar, vocabulary, etc
+    tag: str | None = None,
+    statement_id: int | None = None,
+    n: int = 1,
+    random: bool = True,
+) -> list[dict[str, object]]:
+    with db.session() as session:
+        # Selecting all questions
+        stmt = select(Questions)
+
+        # Filter by level
+        if question_utils.validate_question_level_id(level_id):
+            level = question_utils.get_level_name(cast(int, level_id))
+            stmt = question_utils.add_filter_level(stmt, level)
+
+        # Filter by topic
+        if question_utils.validate_question_topic(topic_id):
+            stmt = question_utils.add_filter_topic(stmt, topic_id)
+
+        # Filter tag if provided
+        stmt = question_utils.add_filter_tag(stmt, tag)
+
+        # Filter statement_id if provided
+        stmt = question_utils.add_filter_statement_id(stmt, statement_id)
+
+        # Collecting results
+        rows = session.exec(stmt).all()
+        results = [format_question(q) for q in rows]
+        results = results[:n]
+
+        # Randomize the results if requested
+        if random:
+            shuffle(results)
+
+    # Return paginated response with question data
+    return results
+
+
+def get_mock_test(
+    db: DatabaseManagerDep,
+    level_id: int | None = None,  # 4 or 5, for example
+):
+    # Initialize an empty list to hold the mock test questions
+    mock = []
+    for n, topic_id, statement_id in settings.MOCK_GUIDE[level_id]:
+        mock.extend(
+            get_question(
+                db, level_id=level_id, n=n, statement_id=statement_id, topic_id=topic_id
+            )
+        )
+
+    return question_utils.wrap_output(mock, page=1, limit=len(mock), random=None)

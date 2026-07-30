@@ -10,6 +10,7 @@ from .constants import (
     CONFIGURATION_NOT_FOUND_MESSAGE,
     EXPIRED_SESSION_COOKIE_MESSAGE,
     EXPIRED_TOKEN_MESSAGE,
+    FIREBASE_USER_NOT_FOUND_MESSAGE,
     INVALID_SESSION_COOKIE_MESSAGE,
     INVALID_TOKEN_MESSAGE,
     REVOKED_SESSION_COOKIE_MESSAGE,
@@ -39,6 +40,12 @@ FIREBASE_SESSION_COOKIE_ERRORS: FirebaseErrorMap = {
     firebase_auth.RevokedSessionCookieError: REVOKED_SESSION_COOKIE_MESSAGE,
     firebase_auth.UserDisabledError: USER_DISABLED_MESSAGE,
     firebase_auth.CertificateFetchError: CERTIFICATE_FETCH_MESSAGE,
+    firebase_auth.ConfigurationNotFoundError: CONFIGURATION_NOT_FOUND_MESSAGE,
+    firebase_auth.UnexpectedResponseError: UNEXPECTED_RESPONSE_MESSAGE,
+}
+
+FIREBASE_GET_USER_ERRORS: FirebaseErrorMap = {
+    firebase_auth.UserNotFoundError: FIREBASE_USER_NOT_FOUND_MESSAGE,
     firebase_auth.ConfigurationNotFoundError: CONFIGURATION_NOT_FOUND_MESSAGE,
     firebase_auth.UnexpectedResponseError: UNEXPECTED_RESPONSE_MESSAGE,
 }
@@ -109,6 +116,22 @@ def verify_firebase_session_cookie(session_cookie: str) -> FirebaseIdentity:
     )
 
     return _identity_from_claims(cast(dict[str, Any], claims))
+
+
+def get_firebase_user_profile(uid: str) -> FirebaseIdentity:
+    record = _run_firebase_operation(
+        lambda: firebase_auth.get_user(uid, app=get_firebase_app()),
+        FIREBASE_GET_USER_ERRORS,
+    )
+
+    if not record.email:
+        raise FirebaseTokenError("Firebase user does not include an email")
+
+    return FirebaseIdentity(
+        uid=record.uid,
+        email=str(record.email),
+        name=record.display_name,
+    )
 
 
 def revoke_firebase_sessions(uid: str) -> None:

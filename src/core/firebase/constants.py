@@ -13,3 +13,4 @@ SESSION_COOKIE_SIGN_ERROR_MESSAGE = "Session cookie could not be signed"  # nose
 INVALID_SESSION_COOKIE_MESSAGE = "Invalid Firebase session cookie"  # nosec B105
 EXPIRED_SESSION_COOKIE_MESSAGE = "Expired Firebase session cookie"  # nosec B105
 REVOKED_SESSION_COOKIE_MESSAGE = "Revoked Firebase session cookie"  # nosec B105
+FIREBASE_USER_NOT_FOUND_MESSAGE = "Firebase user not found"  # nosec B105

@@ -1,8 +1,10 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from .api import api_router
 from .core.config import settings
@@ -16,6 +18,14 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title=settings.PROJECT_NAME, lifespan=lifespan)
+
+Path("data/media").mkdir(parents=True, exist_ok=True)
+
+app.mount(
+    "/media",
+    StaticFiles(directory="data/media"),
+    name="media",
+)
 
 if settings.cors_origins:
     app.add_middleware(

@@ -1,12 +1,11 @@
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from ..database.metadata import QUESTION_METADATA
 
-
-class QuestionStatus(Enum):
+class AnswerStatus(Enum):
     CORRECT = 1
     INCORRECT = 0
 
@@ -18,15 +17,23 @@ class UserQuestion(SQLModel, table=True):
     """Stores the relationship between a user and a question, including answer status."""
 
     __tablename__ = "user_question"
-    metadata = QUESTION_METADATA
 
-    user_firebase_uid: str | None = Field(default=None)
+    user_firebase_uid: str = Field(
+        foreign_key="user.firebase_uid",
+        primary_key=True,
+        index=True,
+    )
 
     question_id: int | None = Field(
         default=None, foreign_key="questions.id", primary_key=True
     )
 
-    status: QuestionStatus | None = Field(default=None)
+    date: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        index=True,
+    )
+
+    status: AnswerStatus | None = Field(default=None)
 
     selected_alternative: int | None = Field(default=None)
 
@@ -36,7 +43,6 @@ class UserQuestion(SQLModel, table=True):
 
 class QuestionTags(SQLModel, table=True):
     __tablename__ = "question_tags"
-    metadata = QUESTION_METADATA
 
     question_id: int | None = Field(
         default=None,
@@ -52,8 +58,6 @@ class QuestionTags(SQLModel, table=True):
 
 
 class Tags(SQLModel, table=True):
-    metadata = QUESTION_METADATA
-
     id: int | None = Field(default=None, primary_key=True)
 
     name: str = Field(nullable=False, unique=True)
@@ -65,8 +69,6 @@ class Tags(SQLModel, table=True):
 
 
 class Statement(SQLModel, table=True):
-    metadata = QUESTION_METADATA
-
     id: int | None = Field(default=None, primary_key=True)
     question_command: str = Field(nullable=False, unique=True)
     questions: list["Questions"] = Relationship(back_populates="statement")
@@ -74,7 +76,6 @@ class Statement(SQLModel, table=True):
 
 class ContextualTexts(SQLModel, table=True):
     __tablename__ = "contextual_texts"
-    metadata = QUESTION_METADATA
 
     id: int | None = Field(default=None, primary_key=True)
 
@@ -84,8 +85,6 @@ class ContextualTexts(SQLModel, table=True):
 
 
 class Alternatives(SQLModel, table=True):
-    metadata = QUESTION_METADATA
-
     id: int | None = Field(default=None, primary_key=True)
 
     alternative_1: str = Field(nullable=False)
@@ -99,8 +98,6 @@ class Alternatives(SQLModel, table=True):
 
 
 class Media(SQLModel, table=True):
-    metadata = QUESTION_METADATA
-
     id: int | None = Field(default=None, primary_key=True)
 
     contextual_text_id: int | None = Field(
@@ -116,9 +113,12 @@ class Media(SQLModel, table=True):
 
 
 class Questions(SQLModel, table=True):
-    metadata = QUESTION_METADATA
-
     id: int | None = Field(default=None, primary_key=True)
+
+    uid: str = Field(nullable=False, unique=True, index=True)
+
+    # Nível JLPT de origem da questão ("N5", "N4", ...)
+    level: str = Field(nullable=False, index=True)
 
     alternative_id: int = Field(
         foreign_key="alternatives.id",

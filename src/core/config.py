@@ -24,24 +24,73 @@ class Settings(BaseSettings):
     DEV_BACKEND_CORS_ORIGINS: str = "*"
     PROD_BACKEND_CORS_ORIGINS: str = ""
 
-    USERS_DB_FILE: str = str(SERVER_DIR / "data" / "users" / "users.db")
-    SQLITE_FILE_N4: str = str(SERVER_DIR / "data" / "N4" / "N4.db")
-    SQLITE_FILE_N5: str = str(SERVER_DIR / "data" / "N5" / "N5.db")
+    SERVER_DB_FILE: str = str(SERVER_DIR / "data" / "server.db")
 
-    AVAILABLE_QUESTION_DATABASES: dict[int, str] = {4: "N4", 5: "N5"}
-    DATABASE_PATHS: dict[str, str] = {
-        "users": USERS_DB_FILE,
-        "N5": SQLITE_FILE_N5,
-        "N4": SQLITE_FILE_N4,
-    }
+    AVAILABLE_QUESTION_LEVELS: dict[int, str] = {4: "N4", 5: "N5"}
 
-    AVAILABLE_QUESTION_TOPICS: list[str] = [
+    AVAILABLE_QUESTION_TYPES: list[str] = [
         "grammar",
         "vocabulary",
         "kanji",
         "reading",
         "listening",
     ]
+
+    AVAILABLE_QUESTION_ANSWER_STATUSES: list[str] = [
+        "all",
+        "answered",
+        "unanswered",
+        "correct",
+        "incorrect",
+    ]
+
+    AVAILABLE_STATISTICS_PERIODS: list[str] = [
+        "all",
+        "day",
+        "week",
+        "month",
+        "year",
+    ]
+
+    # Mock test guide (n, topic_id, statement_id)
+    MOCK_GUIDE: dict[int, list[tuple]] = {
+        5: [
+            (7, "kanji", 3),
+            (5, "kanji", 4),
+            # (6, "vocabulary",14),
+            (12, "vocabulary", 12),
+            (6, "vocabulary", 13),
+            (5, "grammar", 15),
+            (4, "grammar", 2),
+            (2, "reading", 16),
+            (4, "reading", 11),
+            (3, "reading", 17),
+            (5, "reading", 10),
+            (7, "listening", 6),
+            (6, "listening", 5),
+            (6, "listening", 8),
+            (5, "listening", 7),
+        ],
+        4: [
+            (7, "kanji", 3),
+            (5, "kanji", 4),
+            (8, "vocabulary", 12),
+            (4, "vocabulary", 13),
+            (4, "vocabulary", 14),
+            (13, "grammar", 1),
+            (4, "grammar", 2),
+            (4, "reading", 11),
+            (8, "reading", 10),
+            (8, "listening", 6),
+            (7, "listening", 5),
+            (8, "listening", 8),
+            (5, "listening", 7),
+        ],
+    }
+
+    @property
+    def DATABASE_URL(self) -> str:
+        return f"sqlite:///{self.SERVER_DB_FILE}"
 
     @property
     def IS_PROD(self) -> bool:
