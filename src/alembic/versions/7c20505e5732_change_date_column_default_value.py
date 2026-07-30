@@ -5,13 +5,13 @@ Revises: be9b2055e49d
 Create Date: 2026-07-26 11:02:48.179782
 
 """
+
 from collections.abc import Sequence
 
 
-
 # revision identifiers, used by Alembic.
-revision: str = '7c20505e5732'
-down_revision: str | None = 'be9b2055e49d'
+revision: str = "7c20505e5732"
+down_revision: str | None = "be9b2055e49d"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

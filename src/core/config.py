@@ -57,9 +57,9 @@ class Settings(BaseSettings):
         5: [
             (7, "kanji", 3),
             (5, "kanji", 4),
-            #(6, "vocabulary",14),
-            (12, "vocabulary",12),
-            (6, "vocabulary",13),
+            # (6, "vocabulary",14),
+            (12, "vocabulary", 12),
+            (6, "vocabulary", 13),
             (5, "grammar", 15),
             (4, "grammar", 2),
             (2, "reading", 16),
@@ -71,13 +71,12 @@ class Settings(BaseSettings):
             (6, "listening", 8),
             (5, "listening", 7),
         ],
-
         4: [
             (7, "kanji", 3),
             (5, "kanji", 4),
-            (8, "vocabulary",12),
-            (4, "vocabulary",13),
-            (4, "vocabulary",14),
+            (8, "vocabulary", 12),
+            (4, "vocabulary", 13),
+            (4, "vocabulary", 14),
             (13, "grammar", 1),
             (4, "grammar", 2),
             (4, "reading", 11),
@@ -86,7 +85,7 @@ class Settings(BaseSettings):
             (7, "listening", 5),
             (8, "listening", 8),
             (5, "listening", 7),
-        ]
+        ],
     }
 
     @property

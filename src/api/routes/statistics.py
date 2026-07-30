@@ -10,6 +10,7 @@ from ..services import statistics as statistics_services
 
 router = APIRouter(tags=["statistics"])
 
+
 # Statistics
 @router.get(
     "/statistics",
@@ -22,8 +23,5 @@ def read_statistics(
     level: str = "all",  # "all", "N4", "N5"
 ) -> dict[str, object]:
     return statistics_services.statistics(
-        db=db,
-        current_user=current_user,
-        period=period,
-        level=level
+        db=db, current_user=current_user, period=period, level=level
     )

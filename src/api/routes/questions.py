@@ -58,7 +58,6 @@ def register_question(
     )
 
 
-
 # Filters question by level
 @router.get(
     "/levels/{level_id}/questions",

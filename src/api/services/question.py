@@ -194,6 +194,7 @@ def get_level_topic_questions(
 
 # MOCK TEST
 
+
 def get_question(
     db: DatabaseManagerDep,
     level_id: int | None = None,  # 4 or 5, for example
@@ -201,7 +202,7 @@ def get_question(
     tag: str | None = None,
     statement_id: int | None = None,
     n: int = 1,
-    random : bool = True,
+    random: bool = True,
 ) -> list[dict[str, object]]:
 
     with db.session() as session:
@@ -235,6 +236,7 @@ def get_question(
     # Return paginated response with question data
     return results
 
+
 def get_mock_test(
     db: DatabaseManagerDep,
     level_id: int | None = None,  # 4 or 5, for example
@@ -242,10 +244,10 @@ def get_mock_test(
     # Initialize an empty list to hold the mock test questions
     mock = []
     for n, topic_id, statement_id in settings.MOCK_GUIDE[level_id]:
-        mock.extend(get_question(db,
-                            level_id=level_id,
-                            n=n,
-                            statement_id=statement_id,
-                            topic_id=topic_id))
+        mock.extend(
+            get_question(
+                db, level_id=level_id, n=n, statement_id=statement_id, topic_id=topic_id
+            )
+        )
 
     return question_utils.wrap_output(mock, page=1, limit=len(mock), random=None)

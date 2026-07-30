@@ -8,7 +8,8 @@ class StatisticsResponse(SQLModel):
     timeline: list[dict[str, int | str]]
     database: dict[str, dict[str, int]]
 
-'''
+
+"""
 {
   "summary": {
     "answered": 900000000000000000000000000000000000000000000000000000000000001,
@@ -63,4 +64,4 @@ class StatisticsResponse(SQLModel):
     "totalQuestions": 8450
   }
 }
-'''
+"""

@@ -1,4 +1,3 @@
-
 import calendar
 from collections import OrderedDict
 from datetime import UTC, datetime, timedelta
@@ -6,22 +5,21 @@ from datetime import UTC, datetime, timedelta
 from ...core.config import settings
 
 
-def wrap_statistics_output(
-        **kwargs: dict[str, object]
-) -> dict[str, object]:
+def wrap_statistics_output(**kwargs: dict[str, object]) -> dict[str, object]:
     return {
-        "summary":{
+        "summary": {
             "answered": kwargs.get("answered", 0),
             "correct": kwargs.get("correct", 0),
             "incorrect": kwargs.get("incorrect", 0),
             "accuracy": kwargs.get("accuracy", 0.0),
-            "streak": kwargs.get("streak", 0)
+            "streak": kwargs.get("streak", 0),
         },
         "skills": kwargs.get("skills", []),
         "skillTags": kwargs.get("skillTags", {}),
         "timeline": kwargs.get("timeline", []),
-        "database": kwargs.get("database", {})
+        "database": kwargs.get("database", {}),
     }
+
 
 def validate_question_level(level: str | None) -> str | None:
     if level in settings.AVAILABLE_QUESTION_LEVELS.values():
@@ -64,6 +62,7 @@ def period_to_start_date(period: str) -> datetime | None:
 
     raise ValueError(f"Invalid period: {period}")
 
+
 def get_timeline_bucket(date: datetime, period: str) -> str:
     if period == "day":
         return date.strftime("%Y-%m-%d")
@@ -82,6 +81,7 @@ def get_timeline_bucket(date: datetime, period: str) -> str:
         return date.strftime("%Y")
 
     raise ValueError(f"Invalid period: {period}")
+
 
 def get_empty_timeline(period: str) -> OrderedDict[str, dict[str, int]]:
     today = datetime.now(UTC).date()
@@ -108,19 +108,20 @@ def get_empty_timeline(period: str) -> OrderedDict[str, dict[str, int]]:
     elif period == "month":
         # Every ISO week that intersects the current calendar month
         first_day = today.replace(day=1)
-        last_day = today.replace(
-            day=calendar.monthrange(today.year, today.month)[1]
-        )
+        last_day = today.replace(day=calendar.monthrange(today.year, today.month)[1])
 
         current = first_day
         while current <= last_day:
             iso_year, iso_week, _ = current.isocalendar()
             bucket = f"{iso_year}-W{iso_week:02d}"
 
-            buckets.setdefault(bucket, {
-                "correct": 0,
-                "incorrect": 0,
-            })
+            buckets.setdefault(
+                bucket,
+                {
+                    "correct": 0,
+                    "incorrect": 0,
+                },
+            )
 
             current += timedelta(days=1)
 

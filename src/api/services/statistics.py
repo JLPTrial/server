@@ -55,7 +55,7 @@ def get_period_statistics(
     db: DatabaseManagerDep,
     current_user: User,
     period: str,
-    level: str = "all"  # "all", "N4", "N5"
+    level: str = "all",  # "all", "N4", "N5"
 ) -> tuple[int, int]:
     level = statistics_utils.validate_question_level(level)
     start_date = statistics_utils.period_to_start_date(period)
@@ -66,9 +66,7 @@ def get_period_statistics(
                 UserQuestion.question_id,
                 func.max(UserQuestion.date).label("latest_date"),
             )
-            .where(
-                UserQuestion.user_firebase_uid == current_user.firebase_uid
-            )
+            .where(UserQuestion.user_firebase_uid == current_user.firebase_uid)
             .group_by(UserQuestion.question_id)
         )
 
@@ -92,9 +90,7 @@ def get_period_statistics(
                 (UserQuestion.question_id == latest_interactions.c.question_id)
                 & (UserQuestion.date == latest_interactions.c.latest_date),
             )
-            .where(
-                UserQuestion.user_firebase_uid == current_user.firebase_uid
-            )
+            .where(UserQuestion.user_firebase_uid == current_user.firebase_uid)
             .group_by(UserQuestion.status)
         ).all()
 
@@ -105,11 +101,12 @@ def get_period_statistics(
         counts.get(AnswerStatus.INCORRECT, 0),
     )
 
+
 def get_question_type_statistics(
     db: DatabaseManagerDep,
     current_user: User,
     period: str,
-    level: str = "all"  # "all", "N4", "N5"
+    level: str = "all",  # "all", "N4", "N5"
 ) -> list[dict[str, object]]:
 
     # Convert the period ("day", "week", "month", "year", "all")
@@ -126,9 +123,7 @@ def get_question_type_statistics(
                 UserQuestion.question_id,
                 func.max(UserQuestion.date).label("latest_date"),
             )
-            .where(
-                UserQuestion.user_firebase_uid == current_user.firebase_uid
-            )
+            .where(UserQuestion.user_firebase_uid == current_user.firebase_uid)
             .group_by(UserQuestion.question_id)
         )
 
@@ -163,9 +158,7 @@ def get_question_type_statistics(
                 (UserQuestion.question_id == latest_interactions.c.question_id)
                 & (UserQuestion.date == latest_interactions.c.latest_date),
             )
-            .where(
-                UserQuestion.user_firebase_uid == current_user.firebase_uid
-            )
+            .where(UserQuestion.user_firebase_uid == current_user.firebase_uid)
             .group_by(
                 Questions.question_type,
                 UserQuestion.status,
@@ -198,11 +191,13 @@ def get_question_type_statistics(
             }
 
         values = statistics[question_type]
-        results.append({
-            "skill": question_type,
-            "correct": values["correct"],
-            "incorrect": values["incorrect"],
-        })
+        results.append(
+            {
+                "skill": question_type,
+                "correct": values["correct"],
+                "incorrect": values["incorrect"],
+            }
+        )
 
     return results
 
@@ -217,16 +212,13 @@ def get_skill_tag_statistics(
     level = statistics_utils.validate_question_level(level)
 
     with db.session() as session:
-
         # Get the latest interaction for each question.
         latest_interactions = (
             select(
                 UserQuestion.question_id,
                 func.max(UserQuestion.date).label("latest_date"),
             )
-            .where(
-                UserQuestion.user_firebase_uid == current_user.firebase_uid
-            )
+            .where(UserQuestion.user_firebase_uid == current_user.firebase_uid)
             .group_by(UserQuestion.question_id)
         )
 
@@ -239,9 +231,7 @@ def get_skill_tag_statistics(
             latest_interactions = latest_interactions.join(
                 Questions,
                 Questions.id == UserQuestion.question_id,
-            ).where(
-                Questions.level == level
-            )
+            ).where(Questions.level == level)
 
         latest_interactions = latest_interactions.subquery()
 
@@ -262,9 +252,7 @@ def get_skill_tag_statistics(
         )
 
         if level is not None:
-            tag_query = tag_query.where(
-                Questions.level == level
-            )
+            tag_query = tag_query.where(Questions.level == level)
 
         tag_rows = session.exec(tag_query).all()
 
@@ -292,9 +280,7 @@ def get_skill_tag_statistics(
                 (UserQuestion.question_id == latest_interactions.c.question_id)
                 & (UserQuestion.date == latest_interactions.c.latest_date),
             )
-            .where(
-                UserQuestion.user_firebase_uid == current_user.firebase_uid
-            )
+            .where(UserQuestion.user_firebase_uid == current_user.firebase_uid)
             .group_by(
                 Questions.question_type,
                 Tags.name,
@@ -334,6 +320,7 @@ def get_skill_tag_statistics(
         for question_type, tags in skill_tags.items()
     }
 
+
 def get_user_timeline(
     db: DatabaseManagerDep,
     current_user: User,
@@ -346,15 +333,10 @@ def get_user_timeline(
 
     with db.session() as session:
         # Get the latest interaction for each question.
-        latest_interactions = (
-            select(
-                UserQuestion.question_id,
-                func.max(UserQuestion.date).label("latest_date"),
-            )
-            .where(
-                UserQuestion.user_firebase_uid == current_user.firebase_uid
-            )
-        )
+        latest_interactions = select(
+            UserQuestion.question_id,
+            func.max(UserQuestion.date).label("latest_date"),
+        ).where(UserQuestion.user_firebase_uid == current_user.firebase_uid)
 
         # Apply filters before removing duplicates.
         if start_date is not None:
@@ -366,9 +348,7 @@ def get_user_timeline(
             latest_interactions = latest_interactions.join(
                 Questions,
                 Questions.id == UserQuestion.question_id,
-            ).where(
-                Questions.level == level
-            )
+            ).where(Questions.level == level)
 
         latest_interactions = latest_interactions.group_by(
             UserQuestion.question_id
@@ -381,9 +361,7 @@ def get_user_timeline(
                 (UserQuestion.question_id == latest_interactions.c.question_id)
                 & (UserQuestion.date == latest_interactions.c.latest_date),
             )
-            .where(
-                UserQuestion.user_firebase_uid == current_user.firebase_uid
-            )
+            .where(UserQuestion.user_firebase_uid == current_user.firebase_uid)
         ).all()
 
     # Initialize all expected buckets.
@@ -411,6 +389,7 @@ def get_user_timeline(
         for bucket, values in timeline.items()
     ]
 
+
 def get_database_statistics(
     db: DatabaseManagerDep,
     level: str = "all",
@@ -418,21 +397,15 @@ def get_database_statistics(
     level = statistics_utils.validate_question_level(level)
 
     with db.session() as session:
-        level_query = (
-            select(
-                Questions.level,
-                func.count(),
-            )
-            .group_by(Questions.level)
-        )
+        level_query = select(
+            Questions.level,
+            func.count(),
+        ).group_by(Questions.level)
 
-        question_type_query = (
-            select(
-                Questions.question_type,
-                func.count(),
-            )
-            .group_by(Questions.question_type)
-        )
+        question_type_query = select(
+            Questions.question_type,
+            func.count(),
+        ).group_by(Questions.question_type)
 
         tag_query = (
             select(
@@ -452,9 +425,7 @@ def get_database_statistics(
 
         if level is not None:
             level_query = level_query.where(Questions.level == level)
-            question_type_query = question_type_query.where(
-                Questions.level == level
-            )
+            question_type_query = question_type_query.where(Questions.level == level)
             tag_query = tag_query.where(Questions.level == level)
 
         return {
@@ -464,14 +435,13 @@ def get_database_statistics(
         }
 
 
-
 def statistics(
     db: DatabaseManagerDep,
     current_user: User,
     period: str = "all",
     level: str = "all",  # "all", "N4", "N5"
 ) -> dict[str, object]:
-    if not(question_utils.validate_period(period)):
+    if not (question_utils.validate_period(period)):
         return {"invalid_period": period}
 
     # summary
@@ -482,10 +452,9 @@ def statistics(
     accuracy = int(accuracy)
 
     # skills (question_types)
-    skills : list[dict[str, object]] = get_question_type_statistics(db,
-                                            current_user,
-                                            period,
-                                            level)
+    skills: list[dict[str, object]] = get_question_type_statistics(
+        db, current_user, period, level
+    )
 
     # skillTags
     skillTags = get_skill_tag_statistics(db, current_user, period, level)
@@ -506,5 +475,5 @@ def statistics(
         skills=skills,
         skillTags=skillTags,
         timeline=timeline,
-        database=db_info
+        database=db_info,
     )

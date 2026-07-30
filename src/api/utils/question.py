@@ -58,8 +58,10 @@ def validate_question_level_id(level_id: int | None) -> bool:
 def validate_question_topic(topic: str | None) -> bool:
     return topic in settings.AVAILABLE_QUESTION_TYPES
 
+
 def validate_period(period: str | None) -> bool:
     return period in settings.AVAILABLE_STATISTICS_PERIODS
+
 
 # Filters
 def add_filter_level(stmt: Any, level: str | None) -> Any:
@@ -121,5 +123,3 @@ def add_filter_answer_status(
             (UserQuestion.user_firebase_uid == user_firebase_uid)
             & (UserQuestion.status == AnswerStatus.INCORRECT)
         )
-
-
