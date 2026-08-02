@@ -31,7 +31,7 @@ def validate_question_level(level: str | None) -> str | None:
 
 
 def period_to_start_date(period: str) -> datetime | None:
-    now = datetime.now()
+    now = datetime.now(UTC)
 
     if period == "all":
         return None
